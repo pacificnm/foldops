@@ -5,7 +5,7 @@ import { promisify } from "node:util";
 import os from "node:os";
 import type { IngestPayload } from "@foldops/shared";
 import si from "systeminformation";
-import { parseFahLog } from "./fah-log.js";
+import { collectFahStatus } from "./fah-status.js";
 import { collectTemperatures } from "./temperatures.js";
 
 const execFileAsync = promisify(execFile);
@@ -57,6 +57,7 @@ async function getAptUpdatesAvailable(): Promise<number> {
 
 export async function collectSnapshot(
   fahLogPath: string,
+  fahDbPath: string,
 ): Promise<IngestPayload> {
   const hostname = os.hostname();
   const [mem, fsSize, currentLoad, networkStats, fahLog, fahStatus] =
@@ -65,7 +66,7 @@ export async function collectSnapshot(
       si.fsSize(),
       si.currentLoad(),
       si.networkStats(),
-      parseFahLog(fahLogPath),
+      collectFahStatus(fahLogPath, fahDbPath),
       getFahSystemdStatus(),
     ]);
 

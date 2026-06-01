@@ -6,6 +6,8 @@ const AGENT_TOKEN = process.env.AGENT_TOKEN;
 const INTERVAL_MS = Number(process.env.INTERVAL_MS ?? "60000");
 const FAH_LOG_PATH =
   process.env.FAH_LOG_PATH ?? "/var/log/fah-client/log.txt";
+const FAH_DB_PATH =
+  process.env.FAH_DB_PATH ?? "/var/lib/fah-client/client.db";
 
 if (!AGENT_TOKEN) {
   console.error("AGENT_TOKEN is required");
@@ -13,7 +15,7 @@ if (!AGENT_TOKEN) {
 }
 
 async function postSnapshot(): Promise<void> {
-  const payload = await collectSnapshot(FAH_LOG_PATH);
+  const payload = await collectSnapshot(FAH_LOG_PATH, FAH_DB_PATH);
   const url = `${SUPERVISOR_URL.replace(/\/$/, "")}/api/ingest`;
 
   const response = await fetch(url, {

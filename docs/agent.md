@@ -29,11 +29,13 @@ The FoldOps agent (`apps/agent`) runs on each FAH worker node and reports a full
 | Field | Source |
 |-------|--------|
 | `systemdStatus` | `systemctl is-active fah-client` |
-| `project`, `run`, `clone`, `gen` | Parsed from FAH log |
-| `progress` | Parsed from FAH log (%) |
-| `ppd` | Parsed from FAH log |
-| `tpf` | Parsed from FAH log (time per fold) |
+| `project`, `run`, `clone`, `gen` | **FAH v8:** `client.db` (`units` table). **v7 fallback:** log file |
+| `progress` | **v8:** `wu_progress` in `client.db` (0–100%). **v7:** log `Progress: …%` |
+| `ppd` | **v8:** `ppd` in `client.db`. **v7:** log `PPD: …` |
+| `tpf` | **v8:** `eta` or estimated from `run_time` / `wu_progress`. **v7:** log `TPF: …` |
 | `recentErrors` | Last 10 log lines matching error patterns |
+
+**FAH client 8.x** no longer writes progress/PPD/TPF to `log.txt` (that file is mostly client HTTP traffic). The agent reads `/var/lib/fah-client/client.db` via the `sqlite3` CLI. Install `sqlite3` on agent hosts if missing: `sudo apt install sqlite3`.
 
 ### Maintenance
 
@@ -44,9 +46,27 @@ The FoldOps agent (`apps/agent`) runs on each FAH worker node and reports a full
 
 ---
 
-## FAH log parsing
+## FAH v8 client database
 
-The agent reads the tail of the FAH client log (default: `/var/log/fah-client/log.txt`, last 500 lines) and extracts:
+Default path: `/var/lib/fah-client/client.db` (`FAH_DB_PATH`).
+
+The agent queries `SELECT value FROM units` and parses each JSON row, preferring a unit in `RUN` state with the highest `wu_progress`. Typical fields:
+
+| DB field | Maps to |
+|----------|---------|
+| `state.assignment.project` | `project` |
+| `state.wu.run` / `clone` / `gen` | run, clone, gen |
+| `state.wu_progress` | `progress` (×100 if ≤ 1) |
+| `state.ppd` | `ppd` |
+| `state.eta` | `tpf` (remaining time; v8 does not log classic TPF) |
+
+Requires the `sqlite3` command on the agent host.
+
+---
+
+## FAH log parsing (v7 fallback + errors)
+
+The agent reads the tail of the FAH client log (default: `/var/log/fah-client/log.txt`, last 500 lines) for errors and v7-style metrics:
 
 | Pattern | Example log line |
 |---------|------------------|

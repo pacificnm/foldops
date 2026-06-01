@@ -53,6 +53,7 @@ OFFLINE_THRESHOLD_MS=120000
 | `AGENT_TOKEN` | — | **Yes** | Bearer token (must match `INGEST_TOKEN`) |
 | `INTERVAL_MS` | `60000` | No | Collection and POST interval in milliseconds |
 | `FAH_LOG_PATH` | `/var/log/fah-client/log.txt` | No | Path to the FAH client log file |
+| `FAH_DB_PATH` | `/var/lib/fah-client/client.db` | No | FAH v8 SQLite DB (progress, PPD, project) |
 
 ### Example (production)
 
