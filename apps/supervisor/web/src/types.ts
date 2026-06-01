@@ -35,3 +35,38 @@ export interface MachinesResponse {
   machines: MachineSummary[];
   farm_ppd: number;
 }
+
+export interface SnapshotSummary {
+  fah_status: string;
+  project: string | null;
+  progress: number | null;
+  ppd: number | null;
+  cpu_usage: number | null;
+  memory_percent: number | null;
+  disk_percent: number | null;
+  cpu_temp: number | null;
+  chassis_temp: number | null;
+}
+
+export interface SnapshotRecord {
+  id: number;
+  created_at: string;
+  summary: SnapshotSummary;
+}
+
+export interface SnapshotsResponse {
+  hostname: string;
+  snapshots: SnapshotRecord[];
+}
+
+export interface HistoryPoint {
+  time: string;
+  label: string;
+  progress: number | null;
+  ppd: number | null;
+  cpu: number | null;
+  memory: number | null;
+  disk: number | null;
+  cpuTemp: number | null;
+  chassisTemp: number | null;
+}

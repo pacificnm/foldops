@@ -1,1 +1,1 @@
-{"root":["./src/App.tsx","./src/api.ts","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts"],"version":"5.9.3"}
+{"root":["./src/App.tsx","./src/api.ts","./src/history.ts","./src/main.tsx","./src/types.ts","./src/vite-env.d.ts","./src/components/HistoryChart.tsx","./src/components/MachineCard.tsx","./src/components/PageLayout.tsx","./src/pages/Dashboard.tsx","./src/pages/MachineDetail.tsx","./src/utils/format.ts"],"version":"5.9.3"}

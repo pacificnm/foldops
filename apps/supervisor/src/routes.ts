@@ -23,7 +23,7 @@ function isOnline(lastSeen: string, thresholdMs: number): boolean {
   return Date.now() - new Date(lastSeen).getTime() < thresholdMs;
 }
 
-function snapshotSummary(row: SnapshotRow | undefined, thresholdMs: number) {
+function snapshotSummary(row: SnapshotRow | undefined) {
   if (!row) return null;
   const payload = parsePayload(row);
   return {
@@ -95,7 +95,7 @@ export function createApiRouter(
         first_seen: m.first_seen,
         last_seen: m.last_seen,
         online,
-        latest: snapshotSummary(latest, config.offlineThresholdMs),
+        latest: snapshotSummary(latest),
       };
     });
 
@@ -120,7 +120,7 @@ export function createApiRouter(
       first_seen: machine.first_seen,
       last_seen: machine.last_seen,
       online: isOnline(machine.last_seen, config.offlineThresholdMs),
-      latest: snapshotSummary(latest, config.offlineThresholdMs),
+      latest: snapshotSummary(latest),
     });
   });
 
@@ -145,6 +145,9 @@ export function createApiRouter(
           ppd: row.ppd,
           cpu_usage: row.cpu_usage,
           memory_percent: row.memory_percent,
+          disk_percent: row.disk_percent,
+          cpu_temp: row.cpu_temp,
+          chassis_temp: row.chassis_temp,
         },
         payload: parsePayload(row),
       })),

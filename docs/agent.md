@@ -2,6 +2,39 @@
 
 The FoldOps agent (`apps/agent`) runs on each FAH worker node and reports a full system + FAH snapshot every 60 seconds.
 
+Package README: [apps/agent/README.md](../apps/agent/README.md)
+
+## Build
+
+From the repository root:
+
+```bash
+npm install
+npm run build -w @foldops/shared   # required dependency
+npm run build -w @foldops/agent
+```
+
+Shortcut:
+
+```bash
+npm run build:agent
+```
+
+Compiled output: `apps/agent/dist/`. Run in production:
+
+```bash
+node apps/agent/dist/index.js
+```
+
+Development (no build step):
+
+```bash
+cp apps/agent/.env.example apps/agent/.env
+npm run dev -w @foldops/agent
+```
+
+Deploy to FAH nodes with the systemd unit in `apps/agent/systemd/foldops-agent.service`. See [Installation — Agent on fah-01..fah-04](installation.md#3-agent-on-fah-01-through-fah-04).
+
 ## What it collects
 
 ### Host identity

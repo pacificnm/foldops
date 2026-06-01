@@ -8,7 +8,9 @@
     "build:web": "npm run build --prefix web",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
-    "dev:web": "npm run dev --prefix web"
+    "dev:web": "npm run dev --prefix web",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint src"
   },
   "dependencies": {
     "@foldops/shared": "*",

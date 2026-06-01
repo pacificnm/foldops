@@ -22,6 +22,26 @@ npm run dev -w @foldops/agent
 
 Open http://localhost:5173 (dev) or http://localhost:3000 (production build).
 
+## Lint and typecheck
+
+```bash
+npm run typecheck   # all packages (builds shared first for types)
+npm run lint        # ESLint across the repo
+npm run check       # typecheck + lint
+```
+
+Per package: `npm run typecheck -w @foldops/agent`, `npm run lint -w @foldops/web`, etc.
+
+## Production build
+
+```bash
+npm install
+npm run build:supervisor   # fah-01 — API + dashboard
+npm run build:agent        # fah-01..fah-04 — metrics collector
+```
+
+See [apps/agent/README.md](apps/agent/README.md) for agent-specific build and deployment steps.
+
 ## Documentation
 
 Full documentation lives in **[docs/](docs/)**:
@@ -33,7 +53,8 @@ Full documentation lives in **[docs/](docs/)**:
 | [Installation](docs/installation.md) | Dev setup and production deployment |
 | [Configuration](docs/configuration.md) | Environment variables |
 | [API Reference](docs/api.md) | HTTP endpoints |
-| [Agent](docs/agent.md) | Metrics and log parsing |
+| [Agent](docs/agent.md) | Agent build, metrics, and log parsing |
+| [apps/agent/README.md](apps/agent/README.md) | Agent build & systemd quick reference |
 | [Database](docs/database.md) | SQLite schema |
 
 ## Stack

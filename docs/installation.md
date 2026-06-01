@@ -44,7 +44,17 @@ npm run dev
 
 Open **http://localhost:5173**. Vite proxies `/api` requests to the supervisor on port 3000.
 
-### Run an agent
+### Build and run an agent
+
+Build (shared package must be built first):
+
+```bash
+npm run build -w @foldops/shared
+npm run build -w @foldops/agent
+# or: npm run build:agent
+```
+
+Configure and run in dev mode (TypeScript via `tsx`, no `dist/` required):
 
 ```bash
 cp apps/agent/.env.example apps/agent/.env
@@ -54,6 +64,16 @@ cp apps/agent/.env.example apps/agent/.env
 npm run dev -w @foldops/agent
 ```
 
+Production-style run from compiled output:
+
+```bash
+npm run build:agent
+set -a && source apps/agent/.env && set +a
+npm run start -w @foldops/agent
+```
+
+See also [apps/agent/README.md](../apps/agent/README.md).
+
 ---
 
 ## Production build
@@ -62,27 +82,59 @@ From the repository root:
 
 ```bash
 npm install
-npm run build -w @foldops/shared
-npm run build -w @foldops/supervisor
 ```
 
-This compiles TypeScript for the supervisor and agent, and builds the React app into `apps/supervisor/web/dist`. The supervisor serves those static files in production.
+**Supervisor** (fah-01 only — includes React dashboard):
+
+```bash
+npm run build:supervisor
+# equivalent to:
+# npm run build -w @foldops/shared && npm run build -w @foldops/supervisor
+```
+
+**Agent** (every FAH node):
+
+```bash
+npm run build:agent
+# equivalent to:
+# npm run build -w @foldops/shared && npm run build -w @foldops/agent
+```
+
+**Everything:**
+
+```bash
+npm run build
+```
+
+| Command | Output |
+|---------|--------|
+| `build:agent` | `apps/agent/dist/` |
+| `build:supervisor` | `apps/supervisor/dist/` + `apps/supervisor/web/dist/` |
 
 ---
 
 ## Production deployment
 
-### 1. Deploy code
-
-Copy the project to `/opt/foldops` on each relevant host (or use your preferred deploy method):
+### 1. Deploy code to supervisor (fah-01)
 
 ```bash
 sudo mkdir -p /opt/foldops
 sudo rsync -av --exclude node_modules --exclude .env ./ /opt/foldops/
 cd /opt/foldops
 sudo npm install
-sudo npm run build -w @foldops/shared
-sudo npm run build -w @foldops/supervisor
+sudo npm run build:supervisor
+```
+
+### 1b. Deploy code to each agent host (fah-01..fah-04)
+
+Same tree on every node (or rsync only `apps/agent`, `packages/shared`, and root `package.json` / lockfile):
+
+```bash
+sudo mkdir -p /opt/foldops
+sudo rsync -av --exclude node_modules --exclude .env ./ /opt/foldops/
+cd /opt/foldops
+sudo npm install
+sudo npm run build:agent
 ```
 
 ### 2. Supervisor on fah-01
