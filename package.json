@@ -1,0 +1,20 @@
+{
+  "name": "foldops",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Folding@home farm monitor",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev:supervisor": "npm run dev -w @foldops/supervisor",
+    "dev:agent": "npm run dev -w @foldops/agent",
+    "start:supervisor": "npm run start -w @foldops/supervisor",
+    "start:agent": "npm run start -w @foldops/agent"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  }
+}

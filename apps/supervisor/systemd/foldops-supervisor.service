@@ -1,0 +1,17 @@
+[Unit]
+Description=FoldOps FAH farm supervisor and dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=foldops
+Group=foldops
+WorkingDirectory=/opt/foldops/apps/supervisor
+EnvironmentFile=/etc/foldops/supervisor.env
+ExecStart=/usr/bin/node /opt/foldops/apps/supervisor/dist/server.js
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

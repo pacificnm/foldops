@@ -1,0 +1,16 @@
+[Unit]
+Description=FoldOps FAH farm monitoring agent
+After=network-online.target fah-client.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/foldops/apps/agent
+EnvironmentFile=/etc/foldops/agent.env
+ExecStart=/usr/bin/node /opt/foldops/apps/agent/dist/index.js
+Restart=on-failure
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
