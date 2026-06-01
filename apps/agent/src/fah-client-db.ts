@@ -2,6 +2,11 @@ import { accessSync, constants } from "node:fs";
 import { DatabaseSync } from "node:sqlite";
 import type { FahLogState } from "./fah-log.js";
 
+export interface FahDbParseResult {
+  state: FahLogState | null;
+  error: string | null;
+}
+
 interface FahUnitState {
   state?: string;
   progress?: number;
@@ -47,7 +52,9 @@ function unitToState(row: FahUnitRow): FahLogState | null {
   const wuProgress = unit.wu_progress ?? 0;
   const tpf =
     unit.eta?.trim() ||
-    (unit.run_time != null ? formatTpf(unit.run_time, wuProgress) : null);
+    (unit.run_time != null && wuProgress > 0
+      ? formatTpf(unit.run_time, wuProgress)
+      : null);
 
   return {
     project: String(unit.assignment.project),
@@ -83,33 +90,85 @@ function pickBestUnit(rows: FahUnitRow[]): FahLogState | null {
   return best?.state ?? null;
 }
 
-export function parseFahClientDb(dbPath: string): FahLogState | null {
+function openDatabase(dbPath: string): DatabaseSync {
+  try {
+    return new DatabaseSync(dbPath, { readOnly: true, timeout: 5000 });
+  } catch {
+    const db = new DatabaseSync(dbPath, { timeout: 5000 });
+    db.exec("PRAGMA query_only = ON");
+    return db;
+  }
+}
+
+function queryUnits(db: DatabaseSync): FahUnitRow[] {
+  const rows = db.prepare("SELECT value FROM units").all() as {
+    value: string;
+  }[];
+  const units: FahUnitRow[] = [];
+  for (const row of rows) {
+    try {
+      units.push(JSON.parse(row.value) as FahUnitRow);
+    } catch {
+      // skip malformed row
+    }
+  }
+  return units;
+}
+
+export function parseFahClientDb(dbPath: string): FahDbParseResult {
   try {
     accessSync(dbPath, constants.R_OK);
-  } catch {
-    return null;
+  } catch (err) {
+    const code = (err as NodeJS.ErrnoException).code;
+    if (code === "EACCES" || code === "EPERM") {
+      return {
+        state: null,
+        error: `permission denied reading ${dbPath} — run agent as root (systemctl) or grant read access`,
+      };
+    }
+    return {
+      state: null,
+      error: `${dbPath} not readable (${code ?? err})`,
+    };
   }
 
-  let db: DatabaseSync | undefined;
-  try {
-    db = new DatabaseSync(dbPath, { open: true, readOnly: true });
-    const rows = db
-      .prepare("SELECT value FROM units")
-      .all() as { value: string }[];
+  const attempts = 3;
+  let lastError: unknown;
 
-    const units: FahUnitRow[] = [];
-    for (const row of rows) {
+  for (let i = 0; i < attempts; i++) {
+    let db: DatabaseSync | undefined;
+    try {
+      db = openDatabase(dbPath);
+      const units = queryUnits(db);
+      if (units.length === 0) {
+        return { state: null, error: "client.db has no units rows" };
+      }
+      const picked = pickBestUnit(units);
+      if (!picked) {
+        return {
+          state: null,
+          error: `no active work unit in client.db (${units.length} units)`,
+        };
+      }
+      return { state: picked, error: null };
+    } catch (err) {
+      lastError = err;
+      const msg = String(err);
+      if (msg.includes("SQLITE_BUSY") && i < attempts - 1) {
+        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200);
+        continue;
+      }
+    } finally {
       try {
-        units.push(JSON.parse(row.value) as FahUnitRow);
+        db?.close();
       } catch {
-        // skip malformed row
+        // ignore close errors
       }
     }
-
-    return pickBestUnit(units);
-  } catch {
-    return null;
-  } finally {
-    db?.close();
   }
+
+  return {
+    state: null,
+    error: `failed to open ${dbPath}: ${lastError}`,
+  };
 }

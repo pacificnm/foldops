@@ -58,17 +58,19 @@ async function getAptUpdatesAvailable(): Promise<number> {
 export async function collectSnapshot(
   fahLogPath: string,
   fahDbPath: string,
+  fahWorkDir: string,
 ): Promise<IngestPayload> {
   const hostname = os.hostname();
-  const [mem, fsSize, currentLoad, networkStats, fahLog, fahStatus] =
+  const [mem, fsSize, currentLoad, networkStats, fahResult, fahStatus] =
     await Promise.all([
       si.mem(),
       si.fsSize(),
       si.currentLoad(),
       si.networkStats(),
-      collectFahStatus(fahLogPath, fahDbPath),
+      collectFahStatus(fahLogPath, fahDbPath, fahWorkDir),
       getFahSystemdStatus(),
     ]);
+  const fahLog = fahResult.state;
 
   const rootFs =
     fsSize.find((d) => d.mount === "/") ?? fsSize[0] ?? null;
@@ -102,6 +104,10 @@ export async function collectSnapshot(
   const loadAvg = os.loadavg() as [number, number, number];
   const memUsed = mem.active;
   const memTotal = mem.total;
+
+  if (fahResult.dbError && fahStatus === "active") {
+    console.warn(`[${hostname}] client.db: ${fahResult.dbError}`);
+  }
 
   return {
     hostname,

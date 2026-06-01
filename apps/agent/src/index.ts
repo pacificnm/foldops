@@ -8,6 +8,8 @@ const FAH_LOG_PATH =
   process.env.FAH_LOG_PATH ?? "/var/log/fah-client/log.txt";
 const FAH_DB_PATH =
   process.env.FAH_DB_PATH ?? "/var/lib/fah-client/client.db";
+const FAH_WORK_DIR =
+  process.env.FAH_WORK_DIR ?? "/var/lib/fah-client/work";
 
 if (!AGENT_TOKEN) {
   console.error("AGENT_TOKEN is required");
@@ -15,7 +17,11 @@ if (!AGENT_TOKEN) {
 }
 
 async function postSnapshot(): Promise<void> {
-  const payload = await collectSnapshot(FAH_LOG_PATH, FAH_DB_PATH);
+  const payload = await collectSnapshot(
+    FAH_LOG_PATH,
+    FAH_DB_PATH,
+    FAH_WORK_DIR,
+  );
   const url = `${SUPERVISOR_URL.replace(/\/$/, "")}/api/ingest`;
 
   const response = await fetch(url, {
@@ -45,7 +51,7 @@ async function postSnapshot(): Promise<void> {
     payload.fah.progress == null
   ) {
     console.warn(
-      `[${payload.hostname}] FAH active but no progress/PPD — check ${FAH_DB_PATH} is readable`,
+      `[${payload.hostname}] FAH active but no progress/PPD — use: sudo systemctl restart foldops-agent (needs root to read ${FAH_DB_PATH})`,
     );
   }
 }
