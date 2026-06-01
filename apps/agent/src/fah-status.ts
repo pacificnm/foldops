@@ -6,10 +6,8 @@ export async function collectFahStatus(
   logPath: string,
   dbPath: string,
 ): Promise<FahLogState> {
-  const [fromDb, fromLog] = await Promise.all([
-    parseFahClientDb(dbPath),
-    parseFahLog(logPath),
-  ]);
+  const fromDb = parseFahClientDb(dbPath);
+  const fromLog = await parseFahLog(logPath);
 
   if (!fromDb) return fromLog;
 

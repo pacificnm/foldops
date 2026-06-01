@@ -32,9 +32,22 @@ async function postSnapshot(): Promise<void> {
     throw new Error(`Ingest failed (${response.status}): ${text}`);
   }
 
+  const ppd = payload.fah.ppd ?? "n/a";
+  const progress =
+    payload.fah.progress != null ? `${payload.fah.progress}%` : "n/a";
   console.log(
-    `[${new Date().toISOString()}] ${payload.hostname} → ingest OK (PPD: ${payload.fah.ppd ?? "n/a"})`,
+    `[${new Date().toISOString()}] ${payload.hostname} → ingest OK (progress: ${progress}, PPD: ${ppd})`,
   );
+
+  if (
+    payload.fah.systemdStatus === "active" &&
+    payload.fah.ppd == null &&
+    payload.fah.progress == null
+  ) {
+    console.warn(
+      `[${payload.hostname}] FAH active but no progress/PPD — check ${FAH_DB_PATH} is readable`,
+    );
+  }
 }
 
 async function run(): Promise<void> {

@@ -35,7 +35,7 @@ The FoldOps agent (`apps/agent`) runs on each FAH worker node and reports a full
 | `tpf` | **v8:** `eta` or estimated from `run_time` / `wu_progress`. **v7:** log `TPF: …` |
 | `recentErrors` | Last 10 log lines matching error patterns |
 
-**FAH client 8.x** no longer writes progress/PPD/TPF to `log.txt` (that file is mostly client HTTP traffic). The agent reads `/var/lib/fah-client/client.db` via the `sqlite3` CLI. Install `sqlite3` on agent hosts if missing: `sudo apt install sqlite3`.
+**FAH client 8.x** no longer writes progress/PPD/TPF to `log.txt` (that file is mostly client HTTP traffic). The agent reads `/var/lib/fah-client/client.db` directly. The agent process must be able to read that file (runs as root in production).
 
 ### Maintenance
 
@@ -60,7 +60,7 @@ The agent queries `SELECT value FROM units` and parses each JSON row, preferring
 | `state.ppd` | `ppd` |
 | `state.eta` | `tpf` (remaining time; v8 does not log classic TPF) |
 
-Requires the `sqlite3` command on the agent host.
+Read using Node’s built-in `node:sqlite` module (Node 22+). No `sqlite3` CLI package required.
 
 ---
 

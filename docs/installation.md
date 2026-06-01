@@ -199,7 +199,7 @@ sudo systemctl restart foldops-agent
 | Agent logs `ingest error` | `AGENT_TOKEN` matches `INGEST_TOKEN`; supervisor reachable at `SUPERVISOR_URL` |
 | Machine shows offline | Agent service running; firewall allows port 3000 to fah-01 |
 | No FAH metrics | `fah-client` running; agent can read `FAH_DB_PATH` and `FAH_LOG_PATH` |
-| Progress/PPD show `—` | FAH v8: install `sqlite3` (`sudo apt install sqlite3`); confirm `FAH_DB_PATH` exists |
+| Progress/PPD show `—` | Redeploy agent (Node 22+); confirm `FAH_DB_PATH` exists and is readable; check `journalctl -u foldops-agent` for warnings |
 | Supervisor won't start | `INGEST_TOKEN` set; `DB_PATH` directory writable by `foldops` user |
 | Build fails on sqlite | Install `build-essential` and `python3`, re-run `npm install` |
 | CPU temp shows `—` | Check hwmon: `ls /sys/class/hwmon/`; verify `coretemp` or platform driver loaded |

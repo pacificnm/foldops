@@ -1,10 +1,6 @@
-import { execFile } from "node:child_process";
-import { access } from "node:fs/promises";
-import { constants } from "node:fs";
-import { promisify } from "node:util";
+import { accessSync, constants } from "node:fs";
+import { DatabaseSync } from "node:sqlite";
 import type { FahLogState } from "./fah-log.js";
-
-const execFileAsync = promisify(execFile);
 
 interface FahUnitState {
   state?: string;
@@ -87,34 +83,33 @@ function pickBestUnit(rows: FahUnitRow[]): FahLogState | null {
   return best?.state ?? null;
 }
 
-export async function parseFahClientDb(
-  dbPath: string,
-): Promise<FahLogState | null> {
+export function parseFahClientDb(dbPath: string): FahLogState | null {
   try {
-    await access(dbPath, constants.R_OK);
+    accessSync(dbPath, constants.R_OK);
   } catch {
     return null;
   }
 
+  let db: DatabaseSync | undefined;
   try {
-    const { stdout } = await execFileAsync(
-      "sqlite3",
-      ["-json", dbPath, "SELECT value FROM units"],
-      { timeout: 5000, maxBuffer: 10 * 1024 * 1024 },
-    );
+    db = new DatabaseSync(dbPath, { open: true, readOnly: true });
+    const rows = db
+      .prepare("SELECT value FROM units")
+      .all() as { value: string }[];
 
-    const result = JSON.parse(stdout) as { value: string }[];
-    const rows: FahUnitRow[] = [];
-    for (const row of result) {
+    const units: FahUnitRow[] = [];
+    for (const row of rows) {
       try {
-        rows.push(JSON.parse(row.value) as FahUnitRow);
+        units.push(JSON.parse(row.value) as FahUnitRow);
       } catch {
         // skip malformed row
       }
     }
 
-    return pickBestUnit(rows);
+    return pickBestUnit(units);
   } catch {
     return null;
+  } finally {
+    db?.close();
   }
 }
