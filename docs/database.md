@@ -39,6 +39,8 @@ One row per ingest. Stores the full JSON payload plus indexed summary columns fo
 | `cpu_usage` | REAL | CPU usage (%) |
 | `memory_percent` | REAL | Memory used (%) |
 | `disk_percent` | REAL | Disk used (%) |
+| `cpu_temp` | REAL | CPU temperature (°C) |
+| `chassis_temp` | REAL | Chassis/motherboard temperature (°C) |
 | `apt_updates` | INTEGER | Available apt upgrades |
 | `reboot_required` | INTEGER | 0 or 1 |
 

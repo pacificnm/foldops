@@ -15,11 +15,18 @@ export interface MachineSummary {
     cpu_usage: number | null;
     memory_percent: number | null;
     disk_percent: number | null;
+    cpu_temp: number | null;
+    chassis_temp: number | null;
     apt_updates: number;
     reboot_required: boolean;
     payload?: {
       fah: { tpf: string | null; recentErrors: string[] };
-      system: { loadAvg: [number, number, number]; uptime: number };
+      system: {
+        loadAvg: [number, number, number];
+        uptime: number;
+        cpuTemp: number | null;
+        chassisTemp: number | null;
+      };
     };
   } | null;
 }

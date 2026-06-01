@@ -19,6 +19,11 @@ function formatLastSeen(iso: string): string {
   return new Date(iso).toLocaleString();
 }
 
+function formatTemp(celsius: number | null | undefined): string {
+  if (celsius == null) return "—";
+  return `${celsius.toFixed(1)}°C`;
+}
+
 function formatPpd(ppd: number | null): string {
   if (ppd == null) return "—";
   if (ppd >= 1_000_000) return `${(ppd / 1_000_000).toFixed(2)}M`;
@@ -109,6 +114,20 @@ function MachineCard({ machine }: { machine: MachineSummary }) {
             <dt>Disk</dt>
             <dd>
               {latest?.disk_percent != null ? `${latest.disk_percent}%` : "—"}
+            </dd>
+          </div>
+          <div>
+            <dt>CPU temp</dt>
+            <dd className="mono">
+              {formatTemp(latest?.cpu_temp ?? latest?.payload?.system.cpuTemp)}
+            </dd>
+          </div>
+          <div>
+            <dt>Chassis temp</dt>
+            <dd className="mono">
+              {formatTemp(
+                latest?.chassis_temp ?? latest?.payload?.system.chassisTemp,
+              )}
             </dd>
           </div>
           <div>

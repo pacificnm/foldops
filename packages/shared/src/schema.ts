@@ -29,6 +29,7 @@ export const systemSchema = z.object({
   disk: diskSchema,
   network: networkSchema,
   cpuTemp: z.number().nullable(),
+  chassisTemp: z.number().nullable(),
 });
 
 export const fahSchema = z.object({

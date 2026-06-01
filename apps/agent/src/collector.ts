@@ -6,6 +6,7 @@ import os from "node:os";
 import type { IngestPayload } from "@foldops/shared";
 import si from "systeminformation";
 import { parseFahLog } from "./fah-log.js";
+import { collectTemperatures } from "./temperatures.js";
 
 const execFileAsync = promisify(execFile);
 
@@ -54,17 +55,6 @@ async function getAptUpdatesAvailable(): Promise<number> {
   }
 }
 
-async function getCpuTemp(): Promise<number | null> {
-  try {
-    const temp = await si.cpuTemperature();
-    if (temp.main != null && temp.main > 0) return temp.main;
-    if (temp.max != null && temp.max > 0) return temp.max;
-    return null;
-  } catch {
-    return null;
-  }
-}
-
 export async function collectSnapshot(
   fahLogPath: string,
 ): Promise<IngestPayload> {
@@ -102,10 +92,10 @@ export async function collectSnapshot(
   }
   lastNetwork = { rxBytes, txBytes, at: now };
 
-  const [aptUpdates, rebootRequired, cpuTemp] = await Promise.all([
+  const [aptUpdates, rebootRequired, temps] = await Promise.all([
     getAptUpdatesAvailable(),
     fileExists("/var/run/reboot-required"),
-    getCpuTemp(),
+    collectTemperatures(),
   ]);
 
   const loadAvg = os.loadavg() as [number, number, number];
@@ -143,7 +133,8 @@ export async function collectSnapshot(
         rxSec,
         txSec,
       },
-      cpuTemp,
+      cpuTemp: temps.cpuTemp,
+      chassisTemp: temps.chassisTemp,
     },
     fah: {
       systemdStatus: fahStatus,

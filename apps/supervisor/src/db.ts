@@ -18,6 +18,8 @@ export interface SnapshotRow {
   cpu_usage: number | null;
   memory_percent: number | null;
   disk_percent: number | null;
+  cpu_temp: number | null;
+  chassis_temp: number | null;
   apt_updates: number;
   reboot_required: number;
 }
@@ -64,7 +66,23 @@ export function initDb(dbPath: string): Database.Database {
       ON snapshots(hostname, created_at DESC);
   `);
 
+  migrateDb(db);
+
   return db;
+}
+
+function migrateDb(db: Database.Database): void {
+  const columns = db
+    .prepare("PRAGMA table_info(snapshots)")
+    .all() as { name: string }[];
+
+  const names = new Set(columns.map((c) => c.name));
+  if (!names.has("cpu_temp")) {
+    db.exec("ALTER TABLE snapshots ADD COLUMN cpu_temp REAL");
+  }
+  if (!names.has("chassis_temp")) {
+    db.exec("ALTER TABLE snapshots ADD COLUMN chassis_temp REAL");
+  }
 }
 
 export function ingestSnapshot(
@@ -81,10 +99,12 @@ export function ingestSnapshot(
   const insertSnapshot = db.prepare(`
     INSERT INTO snapshots (
       hostname, created_at, payload, fah_status, project, run, clone, gen,
-      progress, ppd, cpu_usage, memory_percent, disk_percent, apt_updates, reboot_required
+      progress, ppd, cpu_usage, memory_percent, disk_percent,
+      cpu_temp, chassis_temp, apt_updates, reboot_required
     ) VALUES (
       @hostname, @created_at, @payload, @fah_status, @project, @run, @clone, @gen,
-      @progress, @ppd, @cpu_usage, @memory_percent, @disk_percent, @apt_updates, @reboot_required
+      @progress, @ppd, @cpu_usage, @memory_percent, @disk_percent,
+      @cpu_temp, @chassis_temp, @apt_updates, @reboot_required
     )
   `);
 
@@ -104,6 +124,8 @@ export function ingestSnapshot(
       cpu_usage: payload.system.cpuUsage,
       memory_percent: payload.system.memory.percent,
       disk_percent: payload.system.disk.percent,
+      cpu_temp: payload.system.cpuTemp,
+      chassis_temp: payload.system.chassisTemp,
       apt_updates: payload.maintenance.aptUpdatesAvailable,
       reboot_required: payload.maintenance.rebootRequired ? 1 : 0,
     });

@@ -32,10 +32,10 @@ FoldOps uses a hub-and-spoke model: one **supervisor** aggregates data from mult
 ## Data flow
 
 1. **Agent** wakes on a 60-second interval (`INTERVAL_MS`).
-2. Agent collects system stats (`systeminformation`), FAH client state (systemd + log parse), and maintenance flags.
+2. Agent collects system stats (`systeminformation`), **CPU and chassis temperatures** (hwmon, thermal zones, optional `lm-sensors`), FAH client state (systemd + log parse), and maintenance flags.
 3. Agent POSTs a JSON payload to `SUPERVISOR_URL/api/ingest` with `Authorization: Bearer <token>`.
 4. **Supervisor** validates the payload with Zod, upserts the machine record, and inserts a snapshot row.
-5. **Dashboard** polls `GET /api/machines` every 30 seconds and renders machine cards.
+5. **Dashboard** polls `GET /api/machines` every 30 seconds and renders machine cards (FAH progress, PPD, CPU load, memory, disk, **CPU/chassis temps**, maintenance flags).
 
 ## Online / offline detection
 

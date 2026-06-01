@@ -165,6 +165,31 @@ sudo apt install build-essential python3
 
 Run `npm install` on the supervisor host after installing these packages.
 
+### Temperature sensors (optional)
+
+CPU temperature is usually available via kernel hwmon (`coretemp`, `k10temp`, etc.) without extra packages. **Chassis** temperature depends on the motherboard reporting a system/board sensor—often labeled `SYST` or exposed through `acpitz`.
+
+If the dashboard shows `—` for chassis temp on a node:
+
+```bash
+# See what the kernel exposes
+grep -H . /sys/class/hwmon/hwmon*/temp*_label 2>/dev/null
+```
+
+Install **lm-sensors** for additional chips and the `sensors` CLI:
+
+```bash
+sudo apt install lm-sensors
+sudo sensors-detect   # interactive, run once per machine
+sensors               # verify readings
+```
+
+No agent configuration is required—the agent picks up hwmon and `sensors -j` automatically. Restart the agent after installing sensors:
+
+```bash
+sudo systemctl restart foldops-agent
+```
+
 ---
 
 ## Troubleshooting
@@ -176,3 +201,5 @@ Run `npm install` on the supervisor host after installing these packages.
 | No FAH metrics | `FAH_LOG_PATH` correct; `fah-client` running; agent can read log file |
 | Supervisor won't start | `INGEST_TOKEN` set; `DB_PATH` directory writable by `foldops` user |
 | Build fails on sqlite | Install `build-essential` and `python3`, re-run `npm install` |
+| CPU temp shows `—` | Check hwmon: `ls /sys/class/hwmon/`; verify `coretemp` or platform driver loaded |
+| Chassis temp shows `—` | Motherboard may lack a chassis sensor; try `lm-sensors` (see [Temperature sensors](#temperature-sensors-optional)) |

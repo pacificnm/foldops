@@ -1,6 +1,6 @@
 # FoldOps
 
-Folding@home farm monitor for Debian nodes. Agents on `fah-01` through `fah-04` collect system and FAH metrics every 60 seconds; a central supervisor on `fah-01` stores snapshots in SQLite and serves a React dashboard.
+Folding@home farm monitor for Debian nodes. Agents on `fah-01` through `fah-04` collect system and FAH metrics every 60 seconds—including **CPU and chassis temperature**—and POST them to a central supervisor on `fah-01`, which stores snapshots in SQLite and serves a React dashboard.
 
 ## Quick start
 

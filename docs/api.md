@@ -65,6 +65,8 @@ List all known machines with their latest snapshot and farm aggregate.
         "cpu_usage": 45.5,
         "memory_percent": 50,
         "disk_percent": 40,
+        "cpu_temp": 61.3,
+        "chassis_temp": 59.0,
         "apt_updates": 3,
         "reboot_required": false,
         "payload": { }
@@ -78,6 +80,7 @@ List all known machines with their latest snapshot and farm aggregate.
 - `online` — `true` when `last_seen` is within `OFFLINE_THRESHOLD_MS`.
 - `farm_ppd` — sum of `ppd` from online machines with a non-null latest PPD.
 - `latest` — `null` if no snapshots exist for the machine.
+- `latest.cpu_temp` / `latest.chassis_temp` — temperatures in °C, or `null` if no sensor was found. Also available in `latest.payload.system.cpuTemp` and `latest.payload.system.chassisTemp`.
 
 ---
 

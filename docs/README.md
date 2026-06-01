@@ -19,11 +19,22 @@ FoldOps is a Folding@home farm monitor for Debian nodes. Agents on each FAH mach
 - **Supervisor host:** `fah-01`
 - **Agent hosts:** `fah-01` through `fah-04`
 
+## Metrics collected
+
+Each agent reports every 60 seconds:
+
+- **System:** uptime, load, CPU %, memory, disk, network, **CPU temperature**, **chassis temperature**
+- **FAH:** service status, project/run/clone/gen, progress, PPD, TPF, recent log errors
+- **Maintenance:** apt updates available, reboot required
+
+The dashboard shows both temperatures on each machine card. See [Agent — Temperature collection](agent.md#temperature-collection) for sensor sources and troubleshooting.
+
 ## Requirements
 
 - Node.js 22+
 - Debian with `fah-client` systemd unit
 - Build tools for `better-sqlite3` on the supervisor host (`build-essential`, `python3`)
+- **Optional:** `lm-sensors` on agent hosts if chassis temperature is not exposed via hwmon alone (see [Installation](installation.md#temperature-sensors-optional))
 
 ## Project layout
 

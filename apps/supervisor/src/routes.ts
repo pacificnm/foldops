@@ -39,6 +39,8 @@ function snapshotSummary(row: SnapshotRow | undefined, thresholdMs: number) {
     cpu_usage: row.cpu_usage,
     memory_percent: row.memory_percent,
     disk_percent: row.disk_percent,
+    cpu_temp: row.cpu_temp ?? payload.system.cpuTemp,
+    chassis_temp: row.chassis_temp ?? payload.system.chassisTemp,
     apt_updates: row.apt_updates,
     reboot_required: row.reboot_required === 1,
     payload,
