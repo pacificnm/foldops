@@ -20,6 +20,20 @@ const emptyFahState = (): FahLogState => ({
   recentErrors: [],
 });
 
+function mergeField<T>(current: T | null, incoming: T | null): T | null {
+  return current ?? incoming;
+}
+
+/** Prefer the larger progress when both sources report folding. */
+function mergeProgress(
+  current: number | null,
+  incoming: number | null,
+): number | null {
+  if (incoming == null || incoming <= 0) return current;
+  if (current == null || current <= 0) return incoming;
+  return Math.max(current, incoming);
+}
+
 function mergeStates(
   primary: FahLogState | null,
   ...fallbacks: (FahLogState | null)[]
@@ -37,13 +51,13 @@ function mergeStates(
 
   for (const fb of fallbacks) {
     if (!fb) continue;
-    base.project ??= fb.project;
-    base.run ??= fb.run;
-    base.clone ??= fb.clone;
-    base.gen ??= fb.gen;
-    base.progress ??= fb.progress;
-    base.ppd ??= fb.ppd;
-    base.tpf ??= fb.tpf;
+    base.project = mergeField(base.project, fb.project);
+    base.run = mergeField(base.run, fb.run);
+    base.clone = mergeField(base.clone, fb.clone);
+    base.gen = mergeField(base.gen, fb.gen);
+    base.progress = mergeProgress(base.progress, fb.progress);
+    base.ppd = mergeField(base.ppd, fb.ppd);
+    base.tpf = mergeField(base.tpf, fb.tpf);
     if (fb.recentErrors.length > 0) {
       base.recentErrors = fb.recentErrors;
     }
@@ -71,7 +85,9 @@ export async function collectFahStatus(
   const fromLog = await parseFahLog(logPath).catch(() => emptyFahState());
   const fromWork = await parseFahWorkLog(workDir).catch(() => null);
 
-  const state = mergeStates(dbResult.state, fromWork, fromLog);
+  // Work/main logs first; client.db last so RUN/PPD from SQLite wins when populated.
+  // During CORE (DB empty), v8 step lines in log.txt still show project/progress.
+  const state = mergeStates(fromWork, fromLog, dbResult.state);
   state.recentErrors = fromLog.recentErrors;
 
   return {

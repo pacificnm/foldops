@@ -71,10 +71,17 @@ try {
     console.log(
       `  slot ${slot}: status=${status} project=${project ?? "—"} ppd=${ppd ?? "—"} progress=${progress ?? "—"}`,
     );
+    if (status === "CORE" && !ppd && !project) {
+      console.log(
+        "    (CORE = FahCore starting or running; wait for RUN + project, or check /var/log/fah-client)",
+      );
+    }
+    const progressNum =
+      progress != null ? (progress <= 1 ? progress * 100 : progress) : 0;
     const hasMetrics =
       (ppd != null && ppd > 0) ||
       Boolean(u?.eta?.trim()) ||
-      progress != null;
+      progressNum > 0;
     if (!project && !hasMetrics) continue;
     const score =
       (u?.state === "RUN" ? 1000 : 0) + (ppd ?? 0) + (progress ?? 0);
@@ -100,7 +107,10 @@ try {
     console.log("\n[WARN] units table is empty — fah-client may not be configured yet");
   } else {
     console.log(
-      "\n[WARN] no slot with PPD/progress/project — check: systemctl status fah-client, unpause in web UI",
+      "\n[WARN] no folding metrics yet (e.g. status=CORE/RUN with ppd=0) —",
+    );
+    console.log(
+      "  check fah-client logs and https://app.foldingathome.org/ for this machine; compare with a working node",
     );
   }
 } catch (e) {

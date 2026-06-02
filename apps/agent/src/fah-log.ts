@@ -14,6 +14,9 @@ export interface FahLogState {
 const PROJECT_RE =
   /Project:\s*(\d+)\s*\(\s*Run\s*(\d+)\s*,\s*Clone\s*(\d+)\s*,\s*Gen\s*(\d+)\s*\)/i;
 const PROGRESS_RE = /Progress:\s*([\d.]+)\s*%/i;
+/** FAH v8 core log: "Completed 750000 out of 5000000 steps (15%)" */
+const STEPS_RE =
+  /Completed\s+(\d+)\s+out\s+of\s+(\d+)\s+steps\s+\(([\d.]+)%\)/i;
 const PPD_RE = /PPD[:\s]+([\d,.]+)/i;
 const TPF_RE = /TPF[:\s]+([\d:]+(?:\.\d+)?)/i;
 const ERROR_RE = /\b(ERROR|FATAL|Exception|failed)\b/i;
@@ -52,6 +55,11 @@ export async function parseFahLog(logPath: string): Promise<FahLogState> {
     const progressMatch = line.match(PROGRESS_RE);
     if (progressMatch) {
       state.progress = Number(progressMatch[1]);
+    }
+
+    const stepsMatch = line.match(STEPS_RE);
+    if (stepsMatch) {
+      state.progress = Number(stepsMatch[3]);
     }
 
     const ppdMatch = line.match(PPD_RE);

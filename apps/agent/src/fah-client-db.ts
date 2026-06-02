@@ -66,11 +66,12 @@ function extractProject(unit: FahUnitState): string | null {
 }
 
 function unitHasMetrics(unit: FahUnitState): boolean {
+  const progress = progressPercent(unit);
   return (
     (unit.ppd != null && unit.ppd > 0) ||
     Boolean(unit.eta?.trim()) ||
-    unit.wu_progress != null ||
-    progressPercent(unit) != null
+    (unit.wu_progress != null && unit.wu_progress > 0) ||
+    (progress != null && progress > 0)
   );
 }
 
