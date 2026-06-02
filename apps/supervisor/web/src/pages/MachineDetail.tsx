@@ -61,7 +61,7 @@ export function MachineDetail() {
 
   return (
     <PageLayout
-      backLink
+      backLink={{ href: "/dashboard", label: "← Farm dashboard" }}
       eyebrow="Node history"
       title={hostname || "Unknown"}
       badge={
