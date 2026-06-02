@@ -129,9 +129,11 @@ npm run build
 sudo mkdir -p /opt/foldops
 sudo rsync -av --exclude node_modules --exclude .env ./ /opt/foldops/
 cd /opt/foldops
-sudo npm install
+sudo npm install --include=dev
 sudo npm run build:supervisor
 ```
+
+Or use the helper script: `sudo ./scripts/build-supervisor.sh`
 
 ### 1b. Deploy code to each agent host (fah-01..fah-04)
 
