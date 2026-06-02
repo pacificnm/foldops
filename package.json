@@ -13,7 +13,7 @@
     "build": "npm run build --workspaces --if-present",
     "build:shared": "npm run build -w @foldops/shared",
     "build:agent": "npm run build -w @foldops/shared && npm run build -w @foldops/agent",
-    "build:supervisor": "npm run build -w @foldops/shared && npm run build -w @foldops/supervisor",
+    "build:supervisor": "npm run build -w @foldops/shared && npm run build -w @foldops/supervisor && npm run build -w @foldops/web",
     "typecheck": "npm run build -w @foldops/shared && npm run typecheck -w @foldops/shared && npm run typecheck -w @foldops/agent && npm run typecheck -w @foldops/supervisor && npm run typecheck -w @foldops/web",
     "lint": "eslint .",
     "check": "npm run typecheck && npm run lint",

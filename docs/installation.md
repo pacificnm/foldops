@@ -84,14 +84,20 @@ From the repository root:
 npm install
 ```
 
-Use a full install (include **devDependencies**). Do not use `npm install --omit=dev` before building — the web dashboard build needs `vite` and `typescript`.
+Run from the **repository root** (`/opt/foldops`), not from `apps/supervisor/web`.
+
+If `NODE_ENV=production` is set globally, install with dev deps for the build step:
+
+```bash
+npm install --include=dev
+# or: NODE_ENV=development npm install
+```
 
 **Supervisor** (fah-01 only — includes React dashboard):
 
 ```bash
 npm run build:supervisor
-# equivalent to:
-# npm run build -w @foldops/shared && npm run build -w @foldops/supervisor
+# builds shared → supervisor API → React dashboard (vite)
 ```
 
 **Agent** (every FAH node):

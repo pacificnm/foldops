@@ -4,11 +4,10 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "npm run build -w @foldops/shared && tsc && npm run build:web",
-    "build:web": "npm run build --prefix web",
+    "build": "npm run build -w @foldops/shared && tsc",
     "start": "node dist/server.js",
     "dev": "tsx watch src/server.ts",
-    "dev:web": "npm run dev --prefix web",
+    "dev:web": "npm run dev -w @foldops/web",
     "typecheck": "tsc --noEmit",
     "lint": "eslint src"
   },
