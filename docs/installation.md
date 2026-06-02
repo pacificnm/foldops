@@ -84,6 +84,8 @@ From the repository root:
 npm install
 ```
 
+Use a full install (include **devDependencies**). Do not use `npm install --omit=dev` before building — the web dashboard build needs `vite` and `typescript`.
+
 **Supervisor** (fah-01 only — includes React dashboard):
 
 ```bash

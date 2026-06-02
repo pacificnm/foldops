@@ -1,1 +1,2 @@
-/// <reference types="vite/client" />
+/** Side-effect and default CSS imports */
+declare module "*.css";
