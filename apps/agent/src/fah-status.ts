@@ -2,6 +2,7 @@ import type { FahLogState } from "./fah-log.js";
 import { parseFahClientDb } from "./fah-client-db.js";
 import { parseFahLog } from "./fah-log.js";
 import { parseFahWorkLog } from "./fah-work-log.js";
+import { parseFahWebSocket } from "./fah-websocket.js";
 
 export interface FahCollectResult {
   state: FahLogState;
@@ -84,10 +85,11 @@ export async function collectFahStatus(
 
   const fromLog = await parseFahLog(logPath).catch(() => emptyFahState());
   const fromWork = await parseFahWorkLog(workDir).catch(() => null);
+  const fromWs = await parseFahWebSocket().catch(() => null);
 
-  // Work/main logs first; client.db last so RUN/PPD from SQLite wins when populated.
-  // During CORE (DB empty), v8 step lines in log.txt still show project/progress.
-  const state = mergeStates(fromWork, fromLog, dbResult.state);
+  // Logs + WebSocket first; client.db last so RUN/PPD from SQLite wins when populated.
+  // During CORE, v8 often exposes PPD/eta on ws://127.0.0.1:7396 before SQLite updates.
+  const state = mergeStates(fromWork, fromLog, fromWs, dbResult.state);
   state.recentErrors = fromLog.recentErrors;
 
   return {

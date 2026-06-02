@@ -153,6 +153,21 @@ try {
   console.log(`\n[WARN] cannot read ${logPath}:`, e.message);
 }
 
+const wsHost = process.env.FAH_WS_HOST ?? "127.0.0.1";
+const wsPort = process.env.FAH_WS_PORT ?? "7396";
+try {
+  const { stdout } = await execFileAsync("ss", ["-tlnp"]);
+  if (stdout.includes(`:${wsPort}`)) {
+    console.log(`\n[OK] FAH WebSocket port ${wsPort} listening (PPD/TPF during CORE)`);
+  } else {
+    console.log(
+      `\n[INFO] port ${wsPort} not listening — PPD/TPF appear after client.db reaches RUN`,
+    );
+  }
+} catch {
+  console.log(`\n[INFO] could not check port ${wsPort} (ss missing)`);
+}
+
 if (supervisorUrl !== "(not set)" && tokenSet) {
   try {
     const res = await fetch(`${supervisorUrl.replace(/\/$/, "")}/api/ingest`, {
