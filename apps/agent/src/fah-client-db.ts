@@ -28,6 +28,52 @@ interface FahUnitRow {
 
 const ACTIVE_STATES = new Set(["RUN", "DOWNLOAD", "UPLOAD", "READY"]);
 
+/** FAH stores either `{ state: { ...metrics } }` or the slot object at the root. */
+function normalizeUnitRow(raw: unknown): FahUnitRow | null {
+  if (!raw || typeof raw !== "object") return null;
+  const obj = raw as Record<string, unknown>;
+  const inner = obj.state;
+  if (inner && typeof inner === "object" && !Array.isArray(inner)) {
+    return { state: inner as FahUnitState };
+  }
+  if (
+    typeof inner === "string" ||
+    "wu_progress" in obj ||
+    "ppd" in obj ||
+    "assignment" in obj
+  ) {
+    return { state: obj as FahUnitState };
+  }
+  return null;
+}
+
+function extractProject(unit: FahUnitState): string | null {
+  const nested = unit as {
+    assignment?: { project?: number; data?: { project?: number } };
+    data?: { assignment?: { data?: { project?: number } } };
+    project?: number;
+  };
+  const candidates = [
+    nested.assignment?.project,
+    nested.assignment?.data?.project,
+    nested.data?.assignment?.data?.project,
+    nested.project,
+  ];
+  for (const p of candidates) {
+    if (p != null) return String(p);
+  }
+  return null;
+}
+
+function unitHasMetrics(unit: FahUnitState): boolean {
+  return (
+    (unit.ppd != null && unit.ppd > 0) ||
+    Boolean(unit.eta?.trim()) ||
+    unit.wu_progress != null ||
+    progressPercent(unit) != null
+  );
+}
+
 function formatTpf(runTimeSec: number, wuProgress: number): string | null {
   if (wuProgress <= 0 || runTimeSec <= 0) return null;
   const totalSec = runTimeSec / wuProgress;
@@ -53,12 +99,8 @@ function unitToState(row: FahUnitRow): FahLogState | null {
   const unit = row.state;
   if (!unit) return null;
 
-  const project =
-    unit.assignment?.project ??
-    (unit as { data?: { assignment?: { data?: { project?: number } } } })
-      .data?.assignment?.data?.project;
-
-  if (project == null) return null;
+  const project = extractProject(unit);
+  if (project == null && !unitHasMetrics(unit)) return null;
 
   const wuProgress = unit.wu_progress ?? 0;
   const tpf =
@@ -68,7 +110,7 @@ function unitToState(row: FahUnitRow): FahLogState | null {
       : null);
 
   return {
-    project: String(project),
+    project,
     run: unit.wu?.run ?? null,
     clone: unit.wu?.clone ?? null,
     gen: unit.wu?.gen ?? null,
@@ -125,7 +167,8 @@ function parseUnitsJson(rows: { value: string }[]): FahUnitRow[] {
   const units: FahUnitRow[] = [];
   for (const row of rows) {
     try {
-      units.push(JSON.parse(row.value) as FahUnitRow);
+      const normalized = normalizeUnitRow(JSON.parse(row.value));
+      if (normalized) units.push(normalized);
     } catch {
       // skip malformed row
     }

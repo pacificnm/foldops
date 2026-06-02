@@ -33,32 +33,75 @@ try {
     "SELECT value FROM units",
   ]);
   const rows = JSON.parse(stdout);
+  console.log(`\n[OK] sqlite3 — ${rows.length} unit row(s) in client.db`);
+
+  function unitState(raw) {
+    if (!raw || typeof raw !== "object") return null;
+    const inner = raw.state;
+    if (inner && typeof inner === "object" && !Array.isArray(inner)) return inner;
+    if (
+      typeof inner === "string" ||
+      "wu_progress" in raw ||
+      "ppd" in raw ||
+      "assignment" in raw
+    ) {
+      return raw;
+    }
+    return null;
+  }
+
+  function projectOf(u) {
+    return (
+      u?.assignment?.project ??
+      u?.assignment?.data?.project ??
+      u?.data?.assignment?.data?.project ??
+      u?.project ??
+      null
+    );
+  }
+
   let best = null;
-  for (const row of rows) {
-    const u = JSON.parse(row.value)?.state;
-    if (!u?.assignment?.project) continue;
+  for (let i = 0; i < rows.length; i++) {
+    const u = unitState(JSON.parse(rows[i].value));
+    const slot = u?.number ?? i;
+    const status = u?.state ?? "(no state)";
+    const project = projectOf(u);
+    const ppd = u?.ppd ?? null;
+    const progress = u?.wu_progress ?? u?.progress ?? null;
+    console.log(
+      `  slot ${slot}: status=${status} project=${project ?? "—"} ppd=${ppd ?? "—"} progress=${progress ?? "—"}`,
+    );
+    const hasMetrics =
+      (ppd != null && ppd > 0) ||
+      Boolean(u?.eta?.trim()) ||
+      progress != null;
+    if (!project && !hasMetrics) continue;
     const score =
-      (u.state === "RUN" ? 1000 : 0) + (u.ppd ?? 0) + (u.wu_progress ?? 0);
+      (u?.state === "RUN" ? 1000 : 0) + (ppd ?? 0) + (progress ?? 0);
     if (!best || score > best.score) {
       best = {
         score,
-        project: u.assignment.project,
-        ppd: u.ppd,
-        eta: u.eta,
-        progress: u.wu_progress,
-        state: u.state,
+        project,
+        ppd,
+        eta: u?.eta,
+        progress,
+        state: u?.state,
       };
     }
   }
   if (best) {
-    console.log("\n[OK] sqlite3 read units — best slot:");
+    console.log("\n[OK] best slot for dashboard PPD/TPF:");
     console.log("  state:", best.state);
-    console.log("  project:", best.project);
+    console.log("  project:", best.project ?? "(none — PPD/progress only)");
     console.log("  ppd:", best.ppd ?? "null");
     console.log("  eta (TPF):", best.eta ?? "null");
     console.log("  wu_progress:", best.progress ?? "null");
+  } else if (rows.length === 0) {
+    console.log("\n[WARN] units table is empty — fah-client may not be configured yet");
   } else {
-    console.log("\n[WARN] units table empty or no active WU");
+    console.log(
+      "\n[WARN] no slot with PPD/progress/project — check: systemctl status fah-client, unpause in web UI",
+    );
   }
 } catch (e) {
   console.log("\n[FAIL] sqlite3:", e.message);
@@ -88,11 +131,21 @@ if (supervisorUrl !== "(not set)" && tokenSet) {
 try {
   const { stdout } = await execFileAsync("systemctl", [
     "is-active",
+    "fah-client",
+  ]);
+  console.log("\nfah-client:", stdout.trim());
+} catch {
+  console.log("\nfah-client: not active");
+}
+
+try {
+  const { stdout } = await execFileAsync("systemctl", [
+    "is-active",
     "foldops-agent",
   ]);
-  console.log("\nfoldops-agent:", stdout.trim());
+  console.log("foldops-agent:", stdout.trim());
 } catch {
-  console.log("\nfoldops-agent: not active (install/start systemd unit)");
+  console.log("foldops-agent: not active (install/start systemd unit)");
 }
 
 console.log("\n=== done ===");
