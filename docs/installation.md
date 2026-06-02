@@ -123,28 +123,30 @@ npm run build
 
 ## Production deployment
 
+On **fah-01..fah-04** you are **root** — run these commands without `sudo`.
+
 ### 1. Deploy code to supervisor (fah-01)
 
 ```bash
-sudo mkdir -p /opt/foldops
-sudo rsync -av --exclude node_modules --exclude .env ./ /opt/foldops/
+mkdir -p /opt/foldops
+rsync -av --exclude node_modules --exclude .env ./ /opt/foldops/
 cd /opt/foldops
-sudo npm install --include=dev
-sudo npm run build:supervisor
+npm install --include=dev
+npm run build:supervisor
 ```
 
-Or use the helper script: `sudo ./scripts/build-supervisor.sh`
+Or use the helper script: `./scripts/build-supervisor.sh`
 
 ### 1b. Deploy code to each agent host (fah-01..fah-04)
 
 Same tree on every node (or rsync only `apps/agent`, `packages/shared`, and root `package.json` / lockfile):
 
 ```bash
-sudo mkdir -p /opt/foldops
-sudo rsync -av --exclude node_modules --exclude .env ./ /opt/foldops/
+mkdir -p /opt/foldops
+rsync -av --exclude node_modules --exclude .env ./ /opt/foldops/
 cd /opt/foldops
-sudo npm install
-sudo npm run build:agent
+npm install
+npm run build:agent
 ```
 
 ### 2. Supervisor on fah-01
@@ -152,35 +154,35 @@ sudo npm run build:agent
 Create the service user and data directory:
 
 ```bash
-sudo useradd --system --home /opt/foldops --shell /usr/sbin/nologin foldops || true
-sudo mkdir -p /etc/foldops /var/lib/foldops
-sudo chown foldops:foldops /var/lib/foldops
+useradd --system --home /opt/foldops --shell /usr/sbin/nologin foldops || true
+mkdir -p /etc/foldops /var/lib/foldops
+chown foldops:foldops /var/lib/foldops
 ```
 
 Create the environment file:
 
 ```bash
-sudo tee /etc/foldops/supervisor.env << 'EOF'
+tee /etc/foldops/supervisor.env << 'EOF'
 PORT=3000
 DB_PATH=/var/lib/foldops/foldops.db
 INGEST_TOKEN=your-long-random-secret-here
 OFFLINE_THRESHOLD_MS=120000
 EOF
-sudo chmod 600 /etc/foldops/supervisor.env
+chmod 600 /etc/foldops/supervisor.env
 ```
 
 Install and start the systemd unit:
 
 ```bash
-sudo cp /opt/foldops/apps/supervisor/systemd/foldops-supervisor.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now foldops-supervisor
+cp /opt/foldops/apps/supervisor/systemd/foldops-supervisor.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now foldops-supervisor
 ```
 
 Verify:
 
 ```bash
-sudo systemctl status foldops-supervisor
+systemctl status foldops-supervisor
 curl -s http://localhost:3000/api/machines
 ```
 
@@ -191,28 +193,28 @@ Dashboard: **http://fah-01:3000**
 On each FAH node, create the agent environment file. Use the **same** secret as `INGEST_TOKEN` on the supervisor:
 
 ```bash
-sudo tee /etc/foldops/agent.env << 'EOF'
+tee /etc/foldops/agent.env << 'EOF'
 SUPERVISOR_URL=http://fah-01:3000
 AGENT_TOKEN=your-long-random-secret-here
 INTERVAL_MS=60000
 FAH_LOG_PATH=/var/log/fah-client/log.txt
 EOF
-sudo chmod 600 /etc/foldops/agent.env
+chmod 600 /etc/foldops/agent.env
 ```
 
 Install and start the agent:
 
 ```bash
-sudo cp /opt/foldops/apps/agent/systemd/foldops-agent.service /etc/systemd/system/
-sudo systemctl daemon-reload
-sudo systemctl enable --now foldops-agent
+cp /opt/foldops/apps/agent/systemd/foldops-agent.service /etc/systemd/system/
+systemctl daemon-reload
+systemctl enable --now foldops-agent
 ```
 
 Verify:
 
 ```bash
-sudo systemctl status foldops-agent
-sudo journalctl -u foldops-agent -f
+systemctl status foldops-agent
+journalctl -u foldops-agent -f
 ```
 
 After ~60 seconds, the machine should appear on the dashboard.
@@ -222,7 +224,7 @@ After ~60 seconds, the machine should appear on the dashboard.
 `better-sqlite3` requires native compilation. On Debian:
 
 ```bash
-sudo apt install build-essential python3
+apt install build-essential python3
 ```
 
 Run `npm install` on the supervisor host after installing these packages.
@@ -241,15 +243,15 @@ grep -H . /sys/class/hwmon/hwmon*/temp*_label 2>/dev/null
 Install **lm-sensors** for additional chips and the `sensors` CLI:
 
 ```bash
-sudo apt install lm-sensors
-sudo sensors-detect   # interactive, run once per machine
+apt install lm-sensors
+sensors-detect   # interactive, run once per machine
 sensors               # verify readings
 ```
 
 No agent configuration is required—the agent picks up hwmon and `sensors -j` automatically. Restart the agent after installing sensors:
 
 ```bash
-sudo systemctl restart foldops-agent
+systemctl restart foldops-agent
 ```
 
 ---
@@ -262,7 +264,7 @@ sudo systemctl restart foldops-agent
 | Machine shows offline | Agent service running; firewall allows port 3000 to fah-01 |
 | No FAH metrics | `fah-client` running; agent can read `FAH_DB_PATH` and `FAH_LOG_PATH` |
 | `Connect Timeout` to supervisor | Supervisor not running, wrong IP, or **firewall** blocking port 3000 — see [Network connectivity](#network-connectivity) |
-| Progress OK, PPD/TPF `—` | PPD/TPF only in `client.db` — run agent as root (`systemctl`), install `sqlite3`: `sudo apt install sqlite3`, redeploy latest agent |
+| Progress OK, PPD/TPF `—` | PPD/TPF only in `client.db` — run agent as root (`systemctl`), install `sqlite3`: `apt install sqlite3`, redeploy latest agent |
 | Progress/PPD show `—` | Redeploy agent (Node 22+); confirm `FAH_DB_PATH` exists and is readable; check `journalctl -u foldops-agent` for warnings |
 
 ### Network connectivity
@@ -273,7 +275,7 @@ Agents POST to `SUPERVISOR_URL` (e.g. `http://192.168.4.10:3000`). Every FAH nod
 
 ```bash
 # Service running
-sudo systemctl status foldops-supervisor
+systemctl status foldops-supervisor
 
 # Listening on all interfaces (not only 127.0.0.1)
 ss -tlnp | grep 3000
@@ -290,8 +292,8 @@ curl -s http://127.0.0.1:3000/api/machines
 **Open firewall if enabled:**
 
 ```bash
-sudo ufw allow 3000/tcp
-# or: sudo ufw status
+ufw allow 3000/tcp
+# or: ufw status
 ```
 
 **From each FAH node** (e.g. fah-02):

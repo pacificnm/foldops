@@ -9,7 +9,7 @@ Runs on each FAH worker node (`fah-01` through `fah-04`).
 - Node.js 22+ (see repo `.nvmrc`)
 - `fah-client` installed and running
 - Read access to `/var/lib/fah-client/client.db` (production service runs as **root**)
-- **`sqlite3` CLI** recommended on FAH nodes (`sudo apt install sqlite3`) — used to read PPD/TPF if `node:sqlite` is unavailable
+- **`sqlite3` CLI** recommended on FAH nodes (`apt install sqlite3`) — used to read PPD/TPF if `node:sqlite` is unavailable
 
 ## Install dependencies
 
@@ -80,7 +80,7 @@ AGENT_TOKEN=<same as INGEST_TOKEN in apps/supervisor/.env>
 Reading `client.db` requires permission. If you see `permission denied` warnings, run as root:
 
 ```bash
-sudo npm run dev -w @foldops/agent
+npm run dev -w @foldops/agent
 ```
 
 ## Production
@@ -104,11 +104,11 @@ node /opt/foldops/apps/agent/dist/index.js
 ### Run with systemd (recommended)
 
 ```bash
-sudo cp /opt/foldops/apps/agent/systemd/foldops-agent.service /etc/systemd/system/
-sudo cp apps/agent/.env.example /etc/foldops/agent.env   # then edit
-sudo systemctl daemon-reload
-sudo systemctl enable --now foldops-agent
-sudo journalctl -u foldops-agent -f
+cp /opt/foldops/apps/agent/systemd/foldops-agent.service /etc/systemd/system/
+cp apps/agent/.env.example /etc/foldops/agent.env   # then edit
+systemctl daemon-reload
+systemctl enable --now foldops-agent
+journalctl -u foldops-agent -f
 ```
 
 See [docs/installation.md](../../docs/installation.md) for full farm deployment steps.

@@ -272,7 +272,7 @@ export async function parseFahClientDb(
       return {
         state: null,
         source: null,
-        error: `permission denied reading ${dbPath} — run: sudo systemctl restart foldops-agent`,
+        error: `permission denied reading ${dbPath} — run: systemctl restart foldops-agent`,
       };
     }
     return {
@@ -308,6 +308,6 @@ async function readClientDb(dbPath: string): Promise<FahDbParseResult> {
   return {
     state: null,
     source: null,
-    error: `cannot read ${dbPath} — run: sudo apt install sqlite3 && sudo systemctl restart foldops-agent`,
+    error: `cannot read ${dbPath} — run: apt install sqlite3 && systemctl restart foldops-agent`,
   };
 }

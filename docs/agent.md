@@ -209,13 +209,13 @@ The production systemd unit runs the agent as **root** because it needs to:
 
 ```bash
 # Status
-sudo systemctl status foldops-agent
+systemctl status foldops-agent
 
 # Logs
-sudo journalctl -u foldops-agent -f
+journalctl -u foldops-agent -f
 
 # Restart
-sudo systemctl restart foldops-agent
+systemctl restart foldops-agent
 ```
 
 Unit file: `apps/agent/systemd/foldops-agent.service`

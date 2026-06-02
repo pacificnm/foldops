@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
- * Run on a FAH node (as root): node apps/agent/scripts/diagnose.mjs
- * Or: sudo node /opt/foldops/apps/agent/scripts/diagnose.mjs
+ * Run on a FAH node (root): node apps/agent/scripts/diagnose.mjs
+ * Or: node /opt/foldops/apps/agent/scripts/diagnose.mjs
  */
 import { execFile } from "node:child_process";
 import { access, readFile } from "node:fs/promises";
@@ -43,7 +43,7 @@ try {
   console.log("\n[OK] client.db exists and is readable");
 } catch (e) {
   console.log("\n[FAIL] client.db:", e.message);
-  console.log("  Fix: sudo systemctl restart foldops-agent (runs as root)");
+  console.log("  Fix: systemctl restart foldops-agent");
 }
 
 try {
@@ -132,7 +132,7 @@ try {
   }
 } catch (e) {
   console.log("\n[FAIL] sqlite3:", e.message);
-  console.log("  Fix: sudo apt install sqlite3");
+  console.log("  Fix: apt install sqlite3");
 }
 
 try {

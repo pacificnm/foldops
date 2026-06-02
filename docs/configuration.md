@@ -80,5 +80,5 @@ FAH_LOG_PATH=/var/log/fah-client/log.txt
 Set permissions on env files:
 
 ```bash
-sudo chmod 600 /etc/foldops/*.env
+chmod 600 /etc/foldops/*.env
 ```
