@@ -61,15 +61,35 @@ export async function collectSnapshot(
   fahWorkDir: string,
 ): Promise<IngestPayload> {
   const hostname = os.hostname();
-  const [mem, fsSize, currentLoad, networkStats, fahResult, fahStatus] =
+  const [mem, fsSize, currentLoad, networkStats, fahStatus] =
     await Promise.all([
       si.mem(),
       si.fsSize(),
       si.currentLoad(),
       si.networkStats(),
-      collectFahStatus(fahLogPath, fahDbPath, fahWorkDir),
       getFahSystemdStatus(),
     ]);
+
+  let fahResult: Awaited<ReturnType<typeof collectFahStatus>>;
+  try {
+    fahResult = await collectFahStatus(fahLogPath, fahDbPath, fahWorkDir);
+  } catch (err) {
+    console.warn(`[${hostname}] FAH metrics collection failed:`, err);
+    fahResult = {
+      state: {
+        project: null,
+        run: null,
+        clone: null,
+        gen: null,
+        progress: null,
+        ppd: null,
+        tpf: null,
+        recentErrors: [],
+      },
+      dbError: String(err),
+      dbSource: null,
+    };
+  }
   const fahLog = fahResult.state;
 
   const rootFs =
@@ -107,6 +127,10 @@ export async function collectSnapshot(
 
   if (fahResult.dbError && fahStatus === "active") {
     console.warn(`[${hostname}] client.db: ${fahResult.dbError}`);
+  } else if (fahResult.dbSource && fahLog.ppd != null) {
+    console.log(
+      `[${hostname}] FAH metrics from ${fahResult.dbSource} (PPD ${fahLog.ppd})`,
+    );
   }
 
   return {

@@ -8,6 +8,7 @@ import { createApiRouter } from "./routes.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const PORT = Number(process.env.PORT ?? "3000");
+const HOST = process.env.HOST ?? "0.0.0.0";
 const DB_PATH = process.env.DB_PATH ?? "./data/foldops.db";
 const INGEST_TOKEN = process.env.INGEST_TOKEN;
 const OFFLINE_THRESHOLD_MS = Number(process.env.OFFLINE_THRESHOLD_MS ?? "120000");
@@ -43,7 +44,7 @@ app.use((req, res, next) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`FoldOps supervisor listening on http://0.0.0.0:${PORT}`);
+app.listen(PORT, HOST, () => {
+  console.log(`FoldOps supervisor listening on http://${HOST}:${PORT}`);
   console.log(`Database: ${DB_PATH}`);
 });

@@ -1,10 +1,14 @@
-import { execFileSync } from "node:child_process";
+import { execFile } from "node:child_process";
 import { accessSync, constants } from "node:fs";
+import { promisify } from "node:util";
 import type { FahLogState } from "./fah-log.js";
+
+const execFileAsync = promisify(execFile);
 
 export interface FahDbParseResult {
   state: FahLogState | null;
   error: string | null;
+  source: "sqlite3-cli" | "node-sqlite" | null;
 }
 
 interface FahUnitState {
@@ -47,7 +51,14 @@ function progressPercent(unit: FahUnitState): number | null {
 
 function unitToState(row: FahUnitRow): FahLogState | null {
   const unit = row.state;
-  if (!unit?.assignment?.project) return null;
+  if (!unit) return null;
+
+  const project =
+    unit.assignment?.project ??
+    (unit as { data?: { assignment?: { data?: { project?: number } } } })
+      .data?.assignment?.data?.project;
+
+  if (project == null) return null;
 
   const wuProgress = unit.wu_progress ?? 0;
   const tpf =
@@ -57,7 +68,7 @@ function unitToState(row: FahUnitRow): FahLogState | null {
       : null);
 
   return {
-    project: String(unit.assignment.project),
+    project: String(project),
     run: unit.wu?.run ?? null,
     clone: unit.wu?.clone ?? null,
     gen: unit.wu?.gen ?? null,
@@ -79,10 +90,29 @@ function pickBestUnit(rows: FahUnitRow[]): FahLogState | null {
 
     const status = unit.state ?? "";
     let score = progressPercent(unit) ?? 0;
+    if (parsed.ppd != null) score += 200;
     if (status === "RUN") score += 1000;
     else if (ACTIVE_STATES.has(status)) score += 500;
-    if (parsed.ppd != null) score += 50;
 
+    if (!best || score > best.score) {
+      best = { state: parsed, score };
+    }
+  }
+
+  return best?.state ?? null;
+}
+
+/** Use any slot that has PPD/progress even when not RUN (paused, finishing, etc.) */
+function pickBestUnitRelaxed(rows: FahUnitRow[]): FahLogState | null {
+  let best: { state: FahLogState; score: number } | null = null;
+
+  for (const row of rows) {
+    const unit = row.state;
+    if (!unit) continue;
+    const parsed = unitToState(row);
+    if (!parsed) continue;
+    const score =
+      (parsed.ppd ?? 0) + (progressPercent(unit) ?? 0) * 10;
     if (!best || score > best.score) {
       best = { state: parsed, score };
     }
@@ -103,18 +133,48 @@ function parseUnitsJson(rows: { value: string }[]): FahUnitRow[] {
   return units;
 }
 
-function finalizeUnits(units: FahUnitRow[]): FahDbParseResult {
+function finalizeUnits(
+  units: FahUnitRow[],
+  source: FahDbParseResult["source"],
+): FahDbParseResult {
   if (units.length === 0) {
-    return { state: null, error: "client.db has no units rows" };
+    return { state: null, error: "client.db has no units rows", source: null };
   }
-  const picked = pickBestUnit(units);
+  let picked = pickBestUnit(units);
   if (!picked) {
+    picked = pickBestUnitRelaxed(units);
+  }
+  if (!picked) {
+    const hint = units
+      .map((u) => u.state?.state ?? "unknown")
+      .join(", ");
     return {
       state: null,
-      error: `no active work unit in client.db (${units.length} units)`,
+      error: `no readable work unit in client.db (${units.length} units, states: ${hint}) — is fah-client folding?`,
+      source: null,
     };
   }
-  return { state: picked, error: null };
+  return { state: picked, error: null, source };
+}
+
+async function loadUnitsViaSqlite3Cli(
+  dbPath: string,
+): Promise<FahUnitRow[] | null> {
+  try {
+    const { stdout } = await execFileAsync(
+      "sqlite3",
+      ["-json", dbPath, "SELECT value FROM units"],
+      {
+        encoding: "utf8",
+        timeout: 8000,
+        maxBuffer: 16 * 1024 * 1024,
+      },
+    );
+    const result = JSON.parse(stdout) as { value: string }[];
+    return parseUnitsJson(result);
+  } catch {
+    return null;
+  }
 }
 
 async function loadUnitsViaNodeSqlite(
@@ -125,9 +185,9 @@ async function loadUnitsViaNodeSqlite(
     let db: InstanceType<typeof DatabaseSync> | undefined;
     try {
       try {
-        db = new DatabaseSync(dbPath, { readOnly: true, timeout: 5000 });
+        db = new DatabaseSync(dbPath, { readOnly: true, timeout: 3000 });
       } catch {
-        db = new DatabaseSync(dbPath, { timeout: 5000 });
+        db = new DatabaseSync(dbPath, { timeout: 3000 });
         db.exec("PRAGMA query_only = ON");
       }
       const rows = db
@@ -146,22 +206,15 @@ async function loadUnitsViaNodeSqlite(
   }
 }
 
-function loadUnitsViaSqlite3Cli(dbPath: string): FahUnitRow[] | null {
-  try {
-    const stdout = execFileSync(
-      "sqlite3",
-      ["-json", dbPath, "SELECT value FROM units"],
-      {
-        encoding: "utf8",
-        timeout: 10_000,
-        maxBuffer: 16 * 1024 * 1024,
-      },
-    );
-    const result = JSON.parse(stdout) as { value: string }[];
-    return parseUnitsJson(result);
-  } catch {
-    return null;
-  }
+const DB_READ_TIMEOUT_MS = 12_000;
+
+function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((_, reject) =>
+      setTimeout(() => reject(new Error("timeout")), ms),
+    ),
+  ]);
 }
 
 export async function parseFahClientDb(
@@ -174,27 +227,43 @@ export async function parseFahClientDb(
     if (code === "EACCES" || code === "EPERM") {
       return {
         state: null,
-        error: `permission denied reading ${dbPath} — run agent as root (systemctl) or: sudo apt install sqlite3 && add user to read client.db`,
+        source: null,
+        error: `permission denied reading ${dbPath} — run: sudo systemctl restart foldops-agent`,
       };
     }
     return {
       state: null,
+      source: null,
       error: `${dbPath} not readable (${code ?? err})`,
     };
   }
 
-  const nodeUnits = await loadUnitsViaNodeSqlite(dbPath);
-  if (nodeUnits) {
-    return finalizeUnits(nodeUnits);
+  try {
+    return await withTimeout(readClientDb(dbPath), DB_READ_TIMEOUT_MS);
+  } catch {
+    return {
+      state: null,
+      source: null,
+      error: `timed out reading ${dbPath} after ${DB_READ_TIMEOUT_MS}ms`,
+    };
+  }
+}
+
+async function readClientDb(dbPath: string): Promise<FahDbParseResult> {
+  // Prefer sqlite3 CLI on production Debian (node:sqlite is experimental)
+  const cliUnits = await loadUnitsViaSqlite3Cli(dbPath);
+  if (cliUnits) {
+    return finalizeUnits(cliUnits, "sqlite3-cli");
   }
 
-  const cliUnits = loadUnitsViaSqlite3Cli(dbPath);
-  if (cliUnits) {
-    return finalizeUnits(cliUnits);
+  const nodeUnits = await loadUnitsViaNodeSqlite(dbPath);
+  if (nodeUnits) {
+    return finalizeUnits(nodeUnits, "node-sqlite");
   }
 
   return {
     state: null,
-    error: `cannot read ${dbPath} (tried node:sqlite and sqlite3 CLI — install: sudo apt install sqlite3, run agent as root)`,
+    source: null,
+    error: `cannot read ${dbPath} — run: sudo apt install sqlite3 && sudo systemctl restart foldops-agent`,
   };
 }

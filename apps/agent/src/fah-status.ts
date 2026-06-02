@@ -6,7 +6,19 @@ import { parseFahWorkLog } from "./fah-work-log.js";
 export interface FahCollectResult {
   state: FahLogState;
   dbError: string | null;
+  dbSource: string | null;
 }
+
+const emptyFahState = (): FahLogState => ({
+  project: null,
+  run: null,
+  clone: null,
+  gen: null,
+  progress: null,
+  ppd: null,
+  tpf: null,
+  recentErrors: [],
+});
 
 function mergeStates(
   primary: FahLogState | null,
@@ -45,12 +57,26 @@ export async function collectFahStatus(
   dbPath: string,
   workDir: string,
 ): Promise<FahCollectResult> {
-  const dbResult = await parseFahClientDb(dbPath);
-  const fromLog = await parseFahLog(logPath);
-  const fromWork = await parseFahWorkLog(workDir);
+  let dbResult: Awaited<ReturnType<typeof parseFahClientDb>>;
+  try {
+    dbResult = await parseFahClientDb(dbPath);
+  } catch (err) {
+    dbResult = {
+      state: null,
+      error: `client.db read failed: ${err}`,
+      source: null,
+    };
+  }
+
+  const fromLog = await parseFahLog(logPath).catch(() => emptyFahState());
+  const fromWork = await parseFahWorkLog(workDir).catch(() => null);
 
   const state = mergeStates(dbResult.state, fromWork, fromLog);
   state.recentErrors = fromLog.recentErrors;
 
-  return { state, dbError: dbResult.error };
+  return {
+    state,
+    dbError: dbResult.error,
+    dbSource: dbResult.source,
+  };
 }

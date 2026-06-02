@@ -27,6 +27,7 @@ Never commit `.env` files or `/etc/foldops/*.env` to version control.
 | Variable | Default | Required | Description |
 |----------|---------|----------|-------------|
 | `PORT` | `3000` | No | HTTP listen port |
+| `HOST` | `0.0.0.0` | No | Bind address (`0.0.0.0` = all interfaces; required for remote agents) |
 | `DB_PATH` | `./data/foldops.db` | No | SQLite database file path |
 | `INGEST_TOKEN` | — | **Yes** | Bearer token agents must send on ingest |
 | `OFFLINE_THRESHOLD_MS` | `120000` | No | Milliseconds after `last_seen` before marking offline |
@@ -35,6 +36,7 @@ Never commit `.env` files or `/etc/foldops/*.env` to version control.
 
 ```env
 PORT=3000
+HOST=0.0.0.0
 DB_PATH=/var/lib/foldops/foldops.db
 INGEST_TOKEN=a1b2c3d4e5f6...
 OFFLINE_THRESHOLD_MS=120000

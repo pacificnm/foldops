@@ -47,7 +47,24 @@ async function postSnapshot(): Promise<void> {
 
   if (payload.fah.systemdStatus === "active" && payload.fah.ppd == null) {
     console.warn(
-      `[${payload.hostname}] FAH active but no PPD — agent must read ${FAH_DB_PATH} as root; install sqlite3: sudo apt install sqlite3`,
+      `[${payload.hostname}] FAH active but no PPD — check ${FAH_DB_PATH} (sudo apt install sqlite3; agent runs as root via systemctl)`,
+    );
+  }
+}
+
+async function probeSupervisor(): Promise<void> {
+  try {
+    const res = await fetch(
+      `${SUPERVISOR_URL.replace(/\/$/, "")}/api/machines`,
+      { signal: AbortSignal.timeout(5000) },
+    );
+    if (!res.ok) {
+      console.warn(`Supervisor reachable but returned ${res.status}`);
+    }
+  } catch (err) {
+    console.error(
+      `Cannot reach supervisor at ${SUPERVISOR_URL} — nodes will show offline:`,
+      err,
     );
   }
 }
@@ -56,6 +73,7 @@ async function run(): Promise<void> {
   console.log(
     `FoldOps agent starting (supervisor: ${SUPERVISOR_URL}, interval: ${INTERVAL_MS}ms)`,
   );
+  await probeSupervisor();
 
   const tick = async () => {
     try {

@@ -261,8 +261,46 @@ sudo systemctl restart foldops-agent
 | Agent logs `ingest error` | `AGENT_TOKEN` matches `INGEST_TOKEN`; supervisor reachable at `SUPERVISOR_URL` |
 | Machine shows offline | Agent service running; firewall allows port 3000 to fah-01 |
 | No FAH metrics | `fah-client` running; agent can read `FAH_DB_PATH` and `FAH_LOG_PATH` |
+| `Connect Timeout` to supervisor | Supervisor not running, wrong IP, or **firewall** blocking port 3000 — see [Network connectivity](#network-connectivity) |
 | Progress OK, PPD/TPF `—` | PPD/TPF only in `client.db` — run agent as root (`systemctl`), install `sqlite3`: `sudo apt install sqlite3`, redeploy latest agent |
 | Progress/PPD show `—` | Redeploy agent (Node 22+); confirm `FAH_DB_PATH` exists and is readable; check `journalctl -u foldops-agent` for warnings |
+
+### Network connectivity
+
+Agents POST to `SUPERVISOR_URL` (e.g. `http://192.168.4.10:3000`). Every FAH node must reach that host on port 3000.
+
+**On the supervisor server** (the machine with IP `192.168.4.10`):
+
+```bash
+# Service running
+sudo systemctl status foldops-supervisor
+
+# Listening on all interfaces (not only 127.0.0.1)
+ss -tlnp | grep 3000
+# expect 0.0.0.0:3000 or *:3000
+
+# Local API works
+curl -s http://127.0.0.1:3000/api/machines
+
+# /etc/foldops/supervisor.env should include:
+# HOST=0.0.0.0
+# PORT=3000
+```
+
+**Open firewall if enabled:**
+
+```bash
+sudo ufw allow 3000/tcp
+# or: sudo ufw status
+```
+
+**From each FAH node** (e.g. fah-02):
+
+```bash
+curl -m 5 http://192.168.4.10:3000/api/machines
+```
+
+If this times out from fah-02 but works on the supervisor host, it is a network/firewall issue — not an agent bug. Fix connectivity before expecting nodes to show online.
 | Supervisor won't start | `INGEST_TOKEN` set; `DB_PATH` directory writable by `foldops` user |
 | Build fails on sqlite | Install `build-essential` and `python3`, re-run `npm install` |
 | CPU temp shows `—` | Check hwmon: `ls /sys/class/hwmon/`; verify `coretemp` or platform driver loaded |
