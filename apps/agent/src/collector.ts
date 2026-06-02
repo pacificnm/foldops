@@ -126,7 +126,16 @@ export async function collectSnapshot(
   const memTotal = mem.total;
 
   if (fahResult.dbError && fahStatus === "active") {
-    console.warn(`[${hostname}] client.db: ${fahResult.dbError}`);
+    const fromLog =
+      fahLog.project != null ||
+      (fahLog.progress != null && fahLog.progress > 0);
+    if (fromLog) {
+      console.log(
+        `[${hostname}] client.db: ${fahResult.dbError} (project/progress from log until RUN)`,
+      );
+    } else {
+      console.warn(`[${hostname}] client.db: ${fahResult.dbError}`);
+    }
   } else if (fahResult.dbSource && fahLog.ppd != null) {
     console.log(
       `[${hostname}] FAH metrics from ${fahResult.dbSource} (PPD ${fahLog.ppd})`,

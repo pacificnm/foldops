@@ -45,9 +45,14 @@ async function postSnapshot(): Promise<void> {
     `[${new Date().toISOString()}] ${payload.hostname} → ingest OK (progress: ${progress}, PPD: ${ppd})`,
   );
 
-  if (payload.fah.systemdStatus === "active" && payload.fah.ppd == null) {
+  if (
+    payload.fah.systemdStatus === "active" &&
+    payload.fah.ppd == null &&
+    payload.fah.progress == null &&
+    payload.fah.project == null
+  ) {
     console.warn(
-      `[${payload.hostname}] FAH active but no PPD — check ${FAH_DB_PATH} (sudo apt install sqlite3; agent runs as root via systemctl)`,
+      `[${payload.hostname}] FAH active but no metrics — check ${FAH_DB_PATH} and ${FAH_LOG_PATH}`,
     );
   }
 }

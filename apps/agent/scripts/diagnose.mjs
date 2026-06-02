@@ -4,13 +4,33 @@
  * Or: sudo node /opt/foldops/apps/agent/scripts/diagnose.mjs
  */
 import { execFile } from "node:child_process";
-import { access } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
 const dbPath = process.env.FAH_DB_PATH ?? "/var/lib/fah-client/client.db";
+const logPath = process.env.FAH_LOG_PATH ?? "/var/log/fah-client/log.txt";
 const supervisorUrl = process.env.SUPERVISOR_URL ?? "(not set)";
 const tokenSet = Boolean(process.env.AGENT_TOKEN);
+
+const PROJECT_RE =
+  /Project:\s*(\d+)\s*\(\s*Run\s*(\d+)\s*,\s*Clone\s*(\d+)\s*,\s*Gen\s*(\d+)\s*\)/i;
+const STEPS_RE =
+  /Completed\s+\d+\s+out\s+of\s+\d+\s+steps\s+\(([\d.]+)%\)/i;
+const PROGRESS_RE = /Progress:\s*([\d.]+)\s*%/i;
+
+function parseLogTail(content) {
+  const state = { project: null, progress: null };
+  for (const line of content.split("\n").filter(Boolean).slice(-500)) {
+    const pm = line.match(PROJECT_RE);
+    if (pm) state.project = pm[1];
+    const sm = line.match(STEPS_RE);
+    if (sm) state.progress = Number(sm[1]);
+    const pr = line.match(PROGRESS_RE);
+    if (pr) state.progress = Number(pr[1]);
+  }
+  return state;
+}
 
 console.log("=== FoldOps agent diagnose ===\n");
 console.log("hostname:", (await import("node:os")).hostname());
@@ -107,15 +127,30 @@ try {
     console.log("\n[WARN] units table is empty — fah-client may not be configured yet");
   } else {
     console.log(
-      "\n[WARN] no folding metrics yet (e.g. status=CORE/RUN with ppd=0) —",
-    );
-    console.log(
-      "  check fah-client logs and https://app.foldingathome.org/ for this machine; compare with a working node",
+      "\n[INFO] client.db has no RUN metrics yet (common while status=CORE)",
     );
   }
 } catch (e) {
   console.log("\n[FAIL] sqlite3:", e.message);
   console.log("  Fix: sudo apt install sqlite3");
+}
+
+try {
+  const log = await readFile(logPath, "utf8");
+  const fromLog = parseLogTail(log);
+  console.log(`\n[OK] ${logPath} (agent uses this when client.db is CORE)`);
+  console.log(
+    `  project: ${fromLog.project ?? "—"}  progress: ${fromLog.progress != null ? `${fromLog.progress}%` : "—"}`,
+  );
+  if (fromLog.project || (fromLog.progress != null && fromLog.progress > 0)) {
+    console.log(
+      "\n[OK] dashboard should show project/progress (PPD/TPF when client.db reaches RUN)",
+    );
+  } else {
+    console.log("\n[WARN] no project/progress in recent log lines");
+  }
+} catch (e) {
+  console.log(`\n[WARN] cannot read ${logPath}:`, e.message);
 }
 
 if (supervisorUrl !== "(not set)" && tokenSet) {
