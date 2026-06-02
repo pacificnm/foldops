@@ -1,5 +1,5 @@
+import { execFileSync } from "node:child_process";
 import { accessSync, constants } from "node:fs";
-import { DatabaseSync } from "node:sqlite";
 import type { FahLogState } from "./fah-log.js";
 
 export interface FahDbParseResult {
@@ -81,6 +81,7 @@ function pickBestUnit(rows: FahUnitRow[]): FahLogState | null {
     let score = progressPercent(unit) ?? 0;
     if (status === "RUN") score += 1000;
     else if (ACTIVE_STATES.has(status)) score += 500;
+    if (parsed.ppd != null) score += 50;
 
     if (!best || score > best.score) {
       best = { state: parsed, score };
@@ -90,20 +91,7 @@ function pickBestUnit(rows: FahUnitRow[]): FahLogState | null {
   return best?.state ?? null;
 }
 
-function openDatabase(dbPath: string): DatabaseSync {
-  try {
-    return new DatabaseSync(dbPath, { readOnly: true, timeout: 5000 });
-  } catch {
-    const db = new DatabaseSync(dbPath, { timeout: 5000 });
-    db.exec("PRAGMA query_only = ON");
-    return db;
-  }
-}
-
-function queryUnits(db: DatabaseSync): FahUnitRow[] {
-  const rows = db.prepare("SELECT value FROM units").all() as {
-    value: string;
-  }[];
+function parseUnitsJson(rows: { value: string }[]): FahUnitRow[] {
   const units: FahUnitRow[] = [];
   for (const row of rows) {
     try {
@@ -115,7 +103,70 @@ function queryUnits(db: DatabaseSync): FahUnitRow[] {
   return units;
 }
 
-export function parseFahClientDb(dbPath: string): FahDbParseResult {
+function finalizeUnits(units: FahUnitRow[]): FahDbParseResult {
+  if (units.length === 0) {
+    return { state: null, error: "client.db has no units rows" };
+  }
+  const picked = pickBestUnit(units);
+  if (!picked) {
+    return {
+      state: null,
+      error: `no active work unit in client.db (${units.length} units)`,
+    };
+  }
+  return { state: picked, error: null };
+}
+
+async function loadUnitsViaNodeSqlite(
+  dbPath: string,
+): Promise<FahUnitRow[] | null> {
+  try {
+    const { DatabaseSync } = await import("node:sqlite");
+    let db: InstanceType<typeof DatabaseSync> | undefined;
+    try {
+      try {
+        db = new DatabaseSync(dbPath, { readOnly: true, timeout: 5000 });
+      } catch {
+        db = new DatabaseSync(dbPath, { timeout: 5000 });
+        db.exec("PRAGMA query_only = ON");
+      }
+      const rows = db
+        .prepare("SELECT value FROM units")
+        .all() as { value: string }[];
+      return parseUnitsJson(rows);
+    } finally {
+      try {
+        db?.close();
+      } catch {
+        // ignore
+      }
+    }
+  } catch {
+    return null;
+  }
+}
+
+function loadUnitsViaSqlite3Cli(dbPath: string): FahUnitRow[] | null {
+  try {
+    const stdout = execFileSync(
+      "sqlite3",
+      ["-json", dbPath, "SELECT value FROM units"],
+      {
+        encoding: "utf8",
+        timeout: 10_000,
+        maxBuffer: 16 * 1024 * 1024,
+      },
+    );
+    const result = JSON.parse(stdout) as { value: string }[];
+    return parseUnitsJson(result);
+  } catch {
+    return null;
+  }
+}
+
+export async function parseFahClientDb(
+  dbPath: string,
+): Promise<FahDbParseResult> {
   try {
     accessSync(dbPath, constants.R_OK);
   } catch (err) {
@@ -123,7 +174,7 @@ export function parseFahClientDb(dbPath: string): FahDbParseResult {
     if (code === "EACCES" || code === "EPERM") {
       return {
         state: null,
-        error: `permission denied reading ${dbPath} — run agent as root (systemctl) or grant read access`,
+        error: `permission denied reading ${dbPath} — run agent as root (systemctl) or: sudo apt install sqlite3 && add user to read client.db`,
       };
     }
     return {
@@ -132,43 +183,18 @@ export function parseFahClientDb(dbPath: string): FahDbParseResult {
     };
   }
 
-  const attempts = 3;
-  let lastError: unknown;
+  const nodeUnits = await loadUnitsViaNodeSqlite(dbPath);
+  if (nodeUnits) {
+    return finalizeUnits(nodeUnits);
+  }
 
-  for (let i = 0; i < attempts; i++) {
-    let db: DatabaseSync | undefined;
-    try {
-      db = openDatabase(dbPath);
-      const units = queryUnits(db);
-      if (units.length === 0) {
-        return { state: null, error: "client.db has no units rows" };
-      }
-      const picked = pickBestUnit(units);
-      if (!picked) {
-        return {
-          state: null,
-          error: `no active work unit in client.db (${units.length} units)`,
-        };
-      }
-      return { state: picked, error: null };
-    } catch (err) {
-      lastError = err;
-      const msg = String(err);
-      if (msg.includes("SQLITE_BUSY") && i < attempts - 1) {
-        Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 200);
-        continue;
-      }
-    } finally {
-      try {
-        db?.close();
-      } catch {
-        // ignore close errors
-      }
-    }
+  const cliUnits = loadUnitsViaSqlite3Cli(dbPath);
+  if (cliUnits) {
+    return finalizeUnits(cliUnits);
   }
 
   return {
     state: null,
-    error: `failed to open ${dbPath}: ${lastError}`,
+    error: `cannot read ${dbPath} (tried node:sqlite and sqlite3 CLI — install: sudo apt install sqlite3, run agent as root)`,
   };
 }

@@ -45,7 +45,7 @@ export async function collectFahStatus(
   dbPath: string,
   workDir: string,
 ): Promise<FahCollectResult> {
-  const dbResult = parseFahClientDb(dbPath);
+  const dbResult = await parseFahClientDb(dbPath);
   const fromLog = await parseFahLog(logPath);
   const fromWork = await parseFahWorkLog(workDir);
 

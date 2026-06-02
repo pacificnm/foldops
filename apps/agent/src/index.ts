@@ -45,13 +45,9 @@ async function postSnapshot(): Promise<void> {
     `[${new Date().toISOString()}] ${payload.hostname} → ingest OK (progress: ${progress}, PPD: ${ppd})`,
   );
 
-  if (
-    payload.fah.systemdStatus === "active" &&
-    payload.fah.ppd == null &&
-    payload.fah.progress == null
-  ) {
+  if (payload.fah.systemdStatus === "active" && payload.fah.ppd == null) {
     console.warn(
-      `[${payload.hostname}] FAH active but no progress/PPD — use: sudo systemctl restart foldops-agent (needs root to read ${FAH_DB_PATH})`,
+      `[${payload.hostname}] FAH active but no PPD — agent must read ${FAH_DB_PATH} as root; install sqlite3: sudo apt install sqlite3`,
     );
   }
 }

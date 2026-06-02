@@ -9,6 +9,7 @@ Runs on each FAH worker node (`fah-01` through `fah-04`).
 - Node.js 22+ (see repo `.nvmrc`)
 - `fah-client` installed and running
 - Read access to `/var/lib/fah-client/client.db` (production service runs as **root**)
+- **`sqlite3` CLI** recommended on FAH nodes (`sudo apt install sqlite3`) — used to read PPD/TPF if `node:sqlite` is unavailable
 
 ## Install dependencies
 
