@@ -9,7 +9,12 @@ import { fetchLiveAgentLogs, type LogSource } from "./agent-logs.js";
 import { isControlAction } from "@foldops/shared";
 import { startAgentDeploy } from "./deploy.js";
 import { getDeployRun, listDeployRuns } from "./deploy-db.js";
-import { listAlertHistoryPublic } from "./alerts/engine.js";
+import {
+  getAlertsStatusPublic,
+  listAlertHistoryPublic,
+  runTestAlert,
+} from "./alerts/engine.js";
+import type { AlertConfig } from "./alerts/types.js";
 import { fetchFahProject } from "./fah-projects.js";
 import {
   getLatestSnapshot,
@@ -28,6 +33,7 @@ export interface AppConfig {
   controlEnabled: boolean;
   afterIngest?: () => void;
   listAlerts?: () => { alerts: unknown[]; count: number };
+  alertConfig: AlertConfig;
 }
 
 function parsePayload(row: SnapshotRow): IngestPayload {
@@ -341,6 +347,35 @@ export function createApiRouter(
     }
 
     res.status(202).json({ run_id: result.runId, status: "running" });
+  });
+
+  router.get("/alerts/status", (_req, res) => {
+    res.json(getAlertsStatusPublic(config.alertConfig));
+  });
+
+  router.post("/alerts/test", async (_req, res) => {
+    if (!config.alertConfig.webhookUrl) {
+      res.status(400).json({ error: "ALERT_WEBHOOK_URL is not set" });
+      return;
+    }
+    if (!config.alertConfig.enabled) {
+      res.status(400).json({
+        error: "Alerts disabled — set ALERTS_ENABLED=true or ALERT_WEBHOOK_URL",
+      });
+      return;
+    }
+
+    try {
+      await runTestAlert(config.alertConfig);
+      res.json({
+        ok: true,
+        message: "Test notification sent",
+        status: getAlertsStatusPublic(config.alertConfig),
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(502).json({ error: message });
+    }
   });
 
   router.get("/alerts/history", (req, res) => {

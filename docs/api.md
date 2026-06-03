@@ -152,6 +152,22 @@ List alert records (active and resolved) from SQLite.
 
 ---
 
+## GET /api/alerts/status
+
+Whether alerts are enabled, webhook is configured, Discord detection, and last webhook error/success time.
+
+---
+
+## POST /api/alerts/test
+
+Send a test notification to `ALERT_WEBHOOK_URL`. Requires alerts enabled and webhook URL set.
+
+**Response:** `{ "ok": true, "message": "Test notification sent", "status": { ... } }`
+
+See [alerts.md](alerts.md) for Discord setup.
+
+---
+
 ## GET /api/projects/:id
 
 Fetch public project metadata from [Folding@home’s API](https://api.foldingathome.org/project/:id). The supervisor proxies and caches responses for one hour (HTML descriptions are converted to plain text; large image fields are omitted).

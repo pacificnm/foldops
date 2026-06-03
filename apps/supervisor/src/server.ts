@@ -60,6 +60,7 @@ app.use(
       const alerts = listActiveAlertsPublic(db);
       return { alerts, count: alerts.length };
     },
+    alertConfig,
   }),
 );
 

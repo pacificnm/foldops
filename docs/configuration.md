@@ -31,8 +31,10 @@ Never commit `.env` files or `/etc/foldops/*.env` to version control.
 | `DB_PATH` | `./data/foldops.db` | No | SQLite database file path |
 | `INGEST_TOKEN` | — | **Yes** | Bearer token agents must send on ingest |
 | `OFFLINE_THRESHOLD_MS` | `120000` | No | Milliseconds after `last_seen` before marking offline |
-| `ALERT_WEBHOOK_URL` | — | No | Discord/Slack-compatible webhook for alert notifications |
+| `ALERT_WEBHOOK_URL` | — | No | Discord (or Slack) incoming webhook URL |
 | `ALERTS_ENABLED` | auto | No | Set `true` or `1` to enable evaluation; defaults on when `ALERT_WEBHOOK_URL` is set |
+| `ALERT_DASHBOARD_URL` | — | No | Base URL for machine links in Discord embeds (e.g. `http://fah-01:3000`) |
+| `ALERT_DISCORD_USERNAME` | `FoldOps` | No | Webhook display name in Discord |
 | `CPU_TEMP_ALERT_C` | `85` | No | Fire a warning when CPU temperature (°C) is at or above this value |
 | `AGENT_HTTP_PORT` | `9100` | No | TCP port for live log pull from agents (`0` = cached logs only) |
 | `DEPLOY_ENABLED` | off | No | Set `true` to enable `POST /api/deploy/agents` from the dashboard |
@@ -49,7 +51,7 @@ When alerts are enabled, the supervisor evaluates farm state every 60 seconds an
 - FAH client service failed
 - Recent FAH log errors in the agent payload
 
-Webhook messages use a simple `{ "content": "..." }` body (Discord-compatible). Without a webhook URL, events are logged to the supervisor journal only.
+Discord receives **rich embeds** (one message per event). Slack and other hooks get plain text. Test with `POST /api/alerts/test`. See [alerts.md](alerts.md). Without a webhook URL, events are logged to the supervisor journal only.
 
 ### Example (production)
 

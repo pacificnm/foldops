@@ -7,17 +7,24 @@ import {
   listActiveAlerts,
   listAlertHistory,
   type AlertHistoryFilter,
+  recordRecoveryAlert,
   resolveAlert,
   upsertActiveAlert,
   type AlertRow,
 } from "./db.js";
 import { evaluateFarm } from "./evaluate.js";
-import { sendWebhookAlert } from "./notify.js";
+import {
+  getWebhookStatus,
+  sendAlertNotifications,
+  sendTestNotification,
+  type NotifyEvent,
+} from "./notify.js";
 import type {
   ActiveAlert,
   AlertCandidate,
   AlertConfig,
   AlertHistoryItem,
+  AlertKind,
 } from "./types.js";
 
 function alertRowToHistoryItem(row: AlertRow): AlertHistoryItem {
@@ -56,6 +63,8 @@ export function loadAlertConfig(env: NodeJS.ProcessEnv): AlertConfig {
     webhookUrl,
     offlineThresholdMs: Number(env.OFFLINE_THRESHOLD_MS ?? "120000"),
     cpuTempAlertC: Number(env.CPU_TEMP_ALERT_C ?? "85"),
+    dashboardUrl: env.ALERT_DASHBOARD_URL?.trim() || null,
+    discordUsername: env.ALERT_DISCORD_USERNAME?.trim() || "FoldOps",
   };
 }
 
@@ -96,6 +105,45 @@ export function listAlertHistoryPublic(
   };
 }
 
+export function getAlertsStatusPublic(config: AlertConfig): {
+  enabled: boolean;
+  webhook_configured: boolean;
+  discord: boolean;
+  dashboard_url: string | null;
+  webhook: ReturnType<typeof getWebhookStatus>;
+} {
+  const webhookUrl = config.webhookUrl ?? "";
+  return {
+    enabled: config.enabled,
+    webhook_configured: Boolean(config.webhookUrl),
+    discord: /discord\.com\/api\/webhooks/i.test(webhookUrl),
+    dashboard_url: config.dashboardUrl,
+    webhook: getWebhookStatus(),
+  };
+}
+
+export async function runTestAlert(config: AlertConfig): Promise<void> {
+  if (!config.webhookUrl) {
+    throw new Error("ALERT_WEBHOOK_URL is not set");
+  }
+  await sendTestNotification({
+    webhookUrl: config.webhookUrl,
+    username: config.discordUsername,
+    dashboardUrl: config.dashboardUrl,
+  });
+}
+
+function candidateToNotifyEvent(c: AlertCandidate): NotifyEvent {
+  return {
+    type: "fired",
+    severity: c.severity,
+    hostname: c.hostname,
+    kind: c.kind,
+    message: c.message,
+    details: c.details ?? null,
+  };
+}
+
 export async function runAlertEvaluation(
   db: Database.Database,
   config: AlertConfig,
@@ -119,7 +167,7 @@ export async function runAlertEvaluation(
   const activeMap = new Map(activeRows.map((r) => [r.id, r]));
 
   const toFire: AlertCandidate[] = [];
-  const toResolve: { id: string; message: string }[] = [];
+  const toResolve: { id: string; message: string; kind: AlertKind; hostname: string }[] = [];
 
   for (const c of candidates) {
     if (c.kind === "node_online") continue;
@@ -139,24 +187,33 @@ export async function runAlertEvaluation(
     toResolve.push({
       id: row.id,
       message: `Resolved: ${row.message}`,
+      kind: row.kind,
+      hostname: row.hostname,
     });
   }
 
-  const notifyLines: string[] = [];
+  const notifyEvents: NotifyEvent[] = [];
+  const notifiedAt = new Date().toISOString();
 
   for (const c of candidates) {
     if (c.kind !== "node_online") continue;
-    notifyLines.push(`🟢 **FoldOps** — ${c.message}`);
+    notifyEvents.push({
+      type: "recovery",
+      severity: "info",
+      hostname: c.hostname,
+      kind: c.kind,
+      message: c.message,
+    });
+    recordRecoveryAlert(db, {
+      id: c.id,
+      hostname: c.hostname,
+      message: c.message,
+      notifiedAt,
+    });
   }
 
   for (const c of toFire) {
-    const prefix =
-      c.severity === "critical"
-        ? "🔴"
-        : c.severity === "warning"
-          ? "🟡"
-          : "🟢";
-    notifyLines.push(`${prefix} **FoldOps** — ${c.message}`);
+    notifyEvents.push(candidateToNotifyEvent(c));
     upsertActiveAlert(db, {
       id: c.id,
       hostname: c.hostname,
@@ -164,26 +221,41 @@ export async function runAlertEvaluation(
       severity: c.severity,
       message: c.message,
       details: c.details ?? null,
-      notifiedAt: new Date().toISOString(),
+      notifiedAt,
     });
   }
 
   for (const r of toResolve) {
-    notifyLines.push(`✅ **FoldOps** — ${r.message}`);
-    resolveAlert(db, r.id, new Date().toISOString());
+    notifyEvents.push({
+      type: "resolved",
+      severity: "info",
+      hostname: r.hostname,
+      kind: r.kind,
+      message: r.message,
+    });
+    resolveAlert(db, r.id, notifiedAt);
   }
 
-  if (config.webhookUrl && notifyLines.length > 0) {
+  if (config.webhookUrl && notifyEvents.length > 0) {
     try {
-      await sendWebhookAlert(config.webhookUrl, notifyLines);
-      console.log(`[alerts] sent ${notifyLines.length} notification(s)`);
+      await sendAlertNotifications(
+        {
+          webhookUrl: config.webhookUrl,
+          username: config.discordUsername,
+          dashboardUrl: config.dashboardUrl,
+        },
+        notifyEvents,
+      );
+      console.log(
+        `[alerts] sent ${notifyEvents.length} Discord/webhook notification(s)`,
+      );
     } catch (err) {
       console.error("[alerts] webhook failed:", err);
     }
-  } else if (notifyLines.length > 0) {
-    console.log(`[alerts] ${notifyLines.length} event(s) (no ALERT_WEBHOOK_URL)`);
-    for (const line of notifyLines) {
-      console.log(`  ${line.replace(/\*\*/g, "")}`);
+  } else if (notifyEvents.length > 0) {
+    console.log(`[alerts] ${notifyEvents.length} event(s) (no ALERT_WEBHOOK_URL)`);
+    for (const e of notifyEvents) {
+      console.log(`  ${e.type}: ${e.message}`);
     }
   }
 }

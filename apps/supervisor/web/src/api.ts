@@ -6,6 +6,7 @@ import type {
   AlertHistoryFilter,
   AlertHistoryResponse,
   AlertsResponse,
+  AlertsStatusResponse,
   ControlAction,
   ControlResult,
   ControlStatus,
@@ -99,6 +100,30 @@ export async function fetchAlerts(): Promise<AlertsResponse> {
     throw new Error(`Failed to load alerts (${res.status})`);
   }
   return res.json() as Promise<AlertsResponse>;
+}
+
+export async function fetchAlertsStatus(): Promise<AlertsStatusResponse> {
+  const res = await fetch("/api/alerts/status");
+  if (!res.ok) {
+    throw new Error(`Failed to load alert status (${res.status})`);
+  }
+  return res.json() as Promise<AlertsStatusResponse>;
+}
+
+export async function sendAlertTest(): Promise<{
+  ok: boolean;
+  message: string;
+}> {
+  const res = await fetch("/api/alerts/test", { method: "POST" });
+  const body = (await res.json().catch(() => ({}))) as {
+    ok?: boolean;
+    message?: string;
+    error?: string;
+  };
+  if (!res.ok) {
+    throw new Error(body.error ?? `Test failed (${res.status})`);
+  }
+  return { ok: true, message: body.message ?? "Sent" };
 }
 
 export async function fetchAlertHistory(opts?: {

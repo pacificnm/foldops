@@ -152,6 +152,40 @@ export function upsertActiveAlert(
   });
 }
 
+/** Record a short-lived recovery event (node back online) in history. */
+export function recordRecoveryAlert(
+  db: Database.Database,
+  row: {
+    id: string;
+    hostname: string;
+    message: string;
+    notifiedAt: string;
+  },
+): void {
+  const now = new Date().toISOString();
+  db.prepare(`
+    INSERT INTO alerts (
+      id, hostname, kind, severity, message, details, active,
+      fired_at, resolved_at, last_notified_at
+    ) VALUES (
+      @id, @hostname, 'node_online', 'info', @message, NULL, 0,
+      @fired_at, @resolved_at, @last_notified_at
+    )
+    ON CONFLICT(id) DO UPDATE SET
+      message = @message,
+      fired_at = @fired_at,
+      resolved_at = @resolved_at,
+      last_notified_at = @last_notified_at
+  `).run({
+    id: row.id,
+    hostname: row.hostname,
+    message: row.message,
+    fired_at: now,
+    resolved_at: now,
+    last_notified_at: row.notifiedAt,
+  });
+}
+
 export function resolveAlert(
   db: Database.Database,
   id: string,

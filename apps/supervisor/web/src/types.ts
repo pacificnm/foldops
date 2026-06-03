@@ -107,6 +107,17 @@ export interface AlertHistoryResponse {
   status: AlertHistoryFilter;
 }
 
+export interface AlertsStatusResponse {
+  enabled: boolean;
+  webhook_configured: boolean;
+  discord: boolean;
+  dashboard_url: string | null;
+  webhook: {
+    last_error: string | null;
+    last_success_at: string | null;
+  };
+}
+
 export type DeployRunStatus = "running" | "completed" | "failed";
 
 export type DeployHostStatus =

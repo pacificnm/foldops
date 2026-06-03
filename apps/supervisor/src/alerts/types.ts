@@ -46,4 +46,6 @@ export interface AlertConfig {
   webhookUrl: string | null;
   offlineThresholdMs: number;
   cpuTempAlertC: number;
+  dashboardUrl: string | null;
+  discordUsername: string;
 }
