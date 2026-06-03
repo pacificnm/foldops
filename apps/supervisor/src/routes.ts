@@ -126,7 +126,7 @@ export function createApiRouter(
   });
 
   router.get("/projects/:id", async (req, res) => {
-    const projectId = Number(req.params.id);
+    const projectId = Number(String(req.params.id).trim());
     if (!Number.isInteger(projectId) || projectId <= 0) {
       res.status(400).json({ error: "Invalid project id" });
       return;

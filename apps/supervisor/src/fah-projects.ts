@@ -34,9 +34,19 @@ function htmlToPlain(html: string): string {
 }
 
 function pickString(value: unknown): string | null {
+  if (typeof value === "number" && !Number.isNaN(value)) {
+    return String(value);
+  }
   if (typeof value !== "string") return null;
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+/** Drop huge base64 image fields before JSON.parse. */
+function slimFahProjectJson(text: string): string {
+  return text
+    .replace(/"mthumb"\s*:\s*"(?:\\.|[^"\\])*"/g, '"mthumb":""')
+    .replace(/"thumb"\s*:\s*"(?:\\.|[^"\\])*"/g, '"thumb":""');
 }
 
 function normalizeProject(raw: Record<string, unknown>, projectId: number): FahProjectPublic {
@@ -75,7 +85,8 @@ export async function fetchFahProject(
       throw new Error(`FAH API returned ${res.status}`);
     }
 
-    const raw = (await res.json()) as Record<string, unknown>;
+    const text = await res.text();
+    const raw = JSON.parse(slimFahProjectJson(text)) as Record<string, unknown>;
     const data = normalizeProject(raw, projectId);
     cache.set(projectId, { data, at: Date.now() });
     return data;

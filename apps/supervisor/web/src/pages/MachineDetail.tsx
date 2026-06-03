@@ -56,7 +56,8 @@ export function MachineDetail() {
   }, [load]);
 
   const latest = machine?.latest;
-  const projectId = latest?.project ?? null;
+  const projectId =
+    latest?.project ?? latest?.payload?.fah?.project?.toString() ?? null;
 
   useEffect(() => {
     if (!projectId) {

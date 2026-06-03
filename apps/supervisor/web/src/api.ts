@@ -1,9 +1,15 @@
+import {
+  hasProjectDetails,
+  normalizeFahProject,
+} from "./fahProject";
 import type {
   FahProjectInfo,
   MachineSummary,
   MachinesResponse,
   SnapshotsResponse,
 } from "./types";
+
+const FAH_PROJECT_API = "https://api.foldingathome.org/project";
 
 export async function fetchMachines(): Promise<MachinesResponse> {
   const res = await fetch("/api/machines");
@@ -36,15 +42,54 @@ export async function fetchSnapshots(
   return res.json() as Promise<SnapshotsResponse>;
 }
 
+async function fetchFahProjectDirect(
+  projectId: string,
+): Promise<FahProjectInfo | null> {
+  const res = await fetch(
+    `${FAH_PROJECT_API}/${encodeURIComponent(projectId)}`,
+  );
+  if (res.status === 404 || res.status === 400) return null;
+  if (!res.ok) {
+    throw new Error(`Folding@home API returned ${res.status}`);
+  }
+  const raw = (await res.json()) as Record<string, unknown>;
+  const info = normalizeFahProject(raw, Number(projectId));
+  return hasProjectDetails(info) ? info : null;
+}
+
 export async function fetchFahProject(
   projectId: string | number,
 ): Promise<FahProjectInfo | null> {
-  const res = await fetch(
-    `/api/projects/${encodeURIComponent(String(projectId))}`,
-  );
-  if (res.status === 404) return null;
+  const id = String(projectId).trim();
+  if (!/^\d+$/.test(id)) {
+    throw new Error(`Invalid project id: ${id}`);
+  }
+
+  const res = await fetch(`/api/projects/${encodeURIComponent(id)}`);
+  const contentType = res.headers.get("content-type") ?? "";
+
+  if (res.status === 404 && !contentType.includes("application/json")) {
+    try {
+      return await fetchFahProjectDirect(id);
+    } catch {
+      throw new Error(
+        "Project API unavailable — rebuild and restart foldops-supervisor, then try again",
+      );
+    }
+  }
+
+  if (res.status === 404) {
+    try {
+      return await fetchFahProjectDirect(id);
+    } catch {
+      return null;
+    }
+  }
+
   if (!res.ok) {
     throw new Error(`Failed to load project (${res.status})`);
   }
-  return res.json() as Promise<FahProjectInfo>;
+
+  const info = (await res.json()) as FahProjectInfo;
+  return hasProjectDetails(info) ? info : null;
 }

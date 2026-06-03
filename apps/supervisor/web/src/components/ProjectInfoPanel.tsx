@@ -88,7 +88,10 @@ export function ProjectInfoPanel({
 
       {!loading && !error && !info && (
         <p className="project-panel-message">
-          No public project details available for this number.
+          Could not load details for project {projectId} from Folding@home.
+          If the supervisor was recently updated, restart{" "}
+          <span className="mono">foldops-supervisor</span> so{" "}
+          <span className="mono">/api/projects</span> is available.
         </p>
       )}
     </section>
