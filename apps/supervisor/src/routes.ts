@@ -9,6 +9,7 @@ import { fetchLiveAgentLogs, type LogSource } from "./agent-logs.js";
 import { isControlAction } from "@foldops/shared";
 import { startAgentDeploy } from "./deploy.js";
 import { getDeployRun, listDeployRuns } from "./deploy-db.js";
+import { listAlertHistoryPublic } from "./alerts/engine.js";
 import { fetchFahProject } from "./fah-projects.js";
 import {
   getLatestSnapshot,
@@ -340,6 +341,28 @@ export function createApiRouter(
     }
 
     res.status(202).json({ run_id: result.runId, status: "running" });
+  });
+
+  router.get("/alerts/history", (req, res) => {
+    const statusParam = String(req.query.status ?? "all");
+    const status =
+      statusParam === "active" ||
+      statusParam === "resolved" ||
+      statusParam === "all"
+        ? statusParam
+        : "all";
+    const limit = Math.min(Number(req.query.limit ?? 100), 500);
+    const hostname = req.query.hostname
+      ? String(req.query.hostname).trim()
+      : undefined;
+
+    const { alerts, counts } = listAlertHistoryPublic(db, {
+      limit,
+      status,
+      hostname: hostname || undefined,
+    });
+
+    res.json({ alerts, count: alerts.length, counts, status });
   });
 
   router.get("/alerts", (_req, res) => {

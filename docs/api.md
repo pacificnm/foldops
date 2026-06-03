@@ -110,6 +110,48 @@ Get a single machine by hostname.
 
 ---
 
+## GET /api/alerts/history
+
+List alert records (active and resolved) from SQLite.
+
+**Auth:** None.
+
+**Query parameters:**
+
+| Parameter | Default | Description |
+|-----------|---------|-------------|
+| `status` | `all` | `all`, `active`, or `resolved` |
+| `limit` | `100` | Max rows (cap 500) |
+| `hostname` | — | Filter to one machine |
+
+**Response:**
+
+```json
+{
+  "alerts": [
+    {
+      "id": "fah-02:cpu_temp_high",
+      "hostname": "fah-02",
+      "kind": "cpu_temp_high",
+      "severity": "warning",
+      "message": "fah-02 CPU temperature 87.0°C (≥ 85°C)",
+      "active": true,
+      "fired_at": "2026-06-03T10:00:00.000Z",
+      "resolved_at": null,
+      "duration_ms": 3600000,
+      "details": null
+    }
+  ],
+  "count": 1,
+  "counts": { "active": 2, "resolved": 15, "total": 17 },
+  "status": "all"
+}
+```
+
+`GET /api/alerts` still returns **active** alerts only (for kiosk/dashboard banners).
+
+---
+
 ## GET /api/projects/:id
 
 Fetch public project metadata from [Folding@home’s API](https://api.foldingathome.org/project/:id). The supervisor proxies and caches responses for one hour (HTML descriptions are converted to plain text; large image fields are omitted).

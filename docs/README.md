@@ -13,6 +13,7 @@ FoldOps is a Folding@home farm monitor for Debian nodes. Agents on each FAH mach
 | [Agent](agent.md) | Metrics, build, and FAH log/DB parsing |
 | [apps/agent/README.md](../apps/agent/README.md) | Agent build, dev, and systemd quick reference |
 | [Database](database.md) | SQLite schema and retention |
+| [Roadmap](roadmap.md) | Future feature ideas backlog |
 
 ## Quick links
 

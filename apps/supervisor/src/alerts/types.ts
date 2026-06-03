@@ -28,6 +28,19 @@ export interface ActiveAlert {
   resolved_at: string | null;
 }
 
+export interface AlertHistoryItem {
+  id: string;
+  hostname: string;
+  kind: AlertKind;
+  severity: AlertSeverity;
+  message: string;
+  active: boolean;
+  fired_at: string;
+  resolved_at: string | null;
+  duration_ms: number;
+  details: string | null;
+}
+
 export interface AlertConfig {
   enabled: boolean;
   webhookUrl: string | null;

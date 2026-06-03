@@ -949,6 +949,139 @@ body {
   text-decoration: underline;
 }
 
+.alert-history-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 1rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.alert-history-host-filter {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.alert-history-host-filter select {
+  font: inherit;
+  font-size: 0.88rem;
+  padding: 0.4rem 0.55rem;
+  border-radius: 6px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+
+.alert-history-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+
+.alert-history-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.alert-history-table th,
+.alert-history-table td {
+  text-align: left;
+  padding: 0.55rem 0.7rem;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.alert-history-table th {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  background: var(--surface-2);
+}
+
+.alert-history-row--active {
+  background: color-mix(in srgb, var(--warn) 6%, transparent);
+}
+
+.alert-history-status {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.alert-history-status--active {
+  color: var(--warn);
+}
+
+.alert-history-status--resolved {
+  color: var(--ok);
+}
+
+.alert-history-severity {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.alert-history-severity--critical {
+  color: var(--danger);
+}
+
+.alert-history-severity--warning {
+  color: var(--warn);
+}
+
+.alert-history-severity--info {
+  color: var(--muted);
+}
+
+.alert-history-kind {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.alert-history-message {
+  max-width: 22rem;
+  line-height: 1.4;
+}
+
+.alert-history-details {
+  margin-top: 0.35rem;
+}
+
+.alert-history-details summary {
+  cursor: pointer;
+  font-size: 0.78rem;
+  color: var(--accent);
+}
+
+.alert-history-details pre {
+  margin: 0.35rem 0 0;
+  padding: 0.45rem;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  white-space: pre-wrap;
+  background: #080b10;
+  border-radius: 4px;
+  max-height: 120px;
+  overflow: auto;
+}
+
+.alert-history-time {
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
+.alert-history-resolved {
+  display: block;
+  color: var(--muted);
+  font-size: 0.75rem;
+}
+
 .machine-controls-intro {
   margin: 0 0 1rem;
   font-size: 0.9rem;

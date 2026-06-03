@@ -45,6 +45,8 @@ export function Dashboard() {
       footer={
         <>
           Auto-refresh every 30s ·{" "}
+          <Link to="/alerts">Alert history</Link>
+          {" · "}
           <Link to="/deploy">Deploy agents →</Link>
         </>
       }

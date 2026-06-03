@@ -30,7 +30,64 @@ export function initAlertTables(db: Database.Database): void {
     );
 
     CREATE INDEX IF NOT EXISTS idx_alerts_active ON alerts(active, fired_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_alerts_fired ON alerts(fired_at DESC);
   `);
+}
+
+export type AlertHistoryFilter = "all" | "active" | "resolved";
+
+export interface ListAlertHistoryOpts {
+  limit: number;
+  status?: AlertHistoryFilter;
+  hostname?: string;
+}
+
+export function listAlertHistory(
+  db: Database.Database,
+  opts: ListAlertHistoryOpts,
+): AlertRow[] {
+  const limit = Math.min(Math.max(opts.limit, 1), 500);
+  const conditions: string[] = [];
+  const params: Record<string, string | number> = { limit };
+
+  if (opts.status === "active") {
+    conditions.push("active = 1");
+  } else if (opts.status === "resolved") {
+    conditions.push("active = 0");
+  }
+
+  if (opts.hostname) {
+    conditions.push("hostname = @hostname");
+    params.hostname = opts.hostname;
+  }
+
+  const where = conditions.length > 0 ? `WHERE ${conditions.join(" AND ")}` : "";
+
+  return db
+    .prepare(
+      `SELECT * FROM alerts ${where} ORDER BY fired_at DESC LIMIT @limit`,
+    )
+    .all(params) as AlertRow[];
+}
+
+export function countAlertsByStatus(db: Database.Database): {
+  active: number;
+  resolved: number;
+  total: number;
+} {
+  const rows = db
+    .prepare(
+      `SELECT active, COUNT(*) as n FROM alerts GROUP BY active`,
+    )
+    .all() as { active: number; n: number }[];
+
+  let active = 0;
+  let resolved = 0;
+  for (const row of rows) {
+    if (row.active === 1) active = row.n;
+    else resolved = row.n;
+  }
+  return { active, resolved, total: active + resolved };
 }
 
 export function listActiveAlerts(db: Database.Database): AlertRow[] {

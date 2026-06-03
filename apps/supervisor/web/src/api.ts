@@ -3,6 +3,8 @@ import {
   normalizeFahProject,
 } from "./fahProject";
 import type {
+  AlertHistoryFilter,
+  AlertHistoryResponse,
   AlertsResponse,
   ControlAction,
   ControlResult,
@@ -97,6 +99,24 @@ export async function fetchAlerts(): Promise<AlertsResponse> {
     throw new Error(`Failed to load alerts (${res.status})`);
   }
   return res.json() as Promise<AlertsResponse>;
+}
+
+export async function fetchAlertHistory(opts?: {
+  status?: AlertHistoryFilter;
+  limit?: number;
+  hostname?: string;
+}): Promise<AlertHistoryResponse> {
+  const params = new URLSearchParams();
+  if (opts?.status) params.set("status", opts.status);
+  if (opts?.limit) params.set("limit", String(opts.limit));
+  if (opts?.hostname) params.set("hostname", opts.hostname);
+
+  const qs = params.toString();
+  const res = await fetch(`/api/alerts/history${qs ? `?${qs}` : ""}`);
+  if (!res.ok) {
+    throw new Error(`Failed to load alert history (${res.status})`);
+  }
+  return res.json() as Promise<AlertHistoryResponse>;
 }
 
 export async function fetchMachines(): Promise<MachinesResponse> {

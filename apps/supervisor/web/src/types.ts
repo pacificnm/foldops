@@ -85,6 +85,28 @@ export interface AlertsResponse {
   count: number;
 }
 
+export type AlertHistoryFilter = "all" | "active" | "resolved";
+
+export interface AlertHistoryItem {
+  id: string;
+  hostname: string;
+  kind: AlertKind;
+  severity: AlertSeverity;
+  message: string;
+  active: boolean;
+  fired_at: string;
+  resolved_at: string | null;
+  duration_ms: number;
+  details: string | null;
+}
+
+export interface AlertHistoryResponse {
+  alerts: AlertHistoryItem[];
+  count: number;
+  counts: { active: number; resolved: number; total: number };
+  status: AlertHistoryFilter;
+}
+
 export type DeployRunStatus = "running" | "completed" | "failed";
 
 export type DeployHostStatus =

@@ -1,9 +1,43 @@
 import type Database from "better-sqlite3";
 import { getLatestSnapshot, listMachines } from "../db.js";
-import { getAlert, initAlertTables, listActiveAlerts, resolveAlert, upsertActiveAlert } from "./db.js";
+import {
+  countAlertsByStatus,
+  getAlert,
+  initAlertTables,
+  listActiveAlerts,
+  listAlertHistory,
+  type AlertHistoryFilter,
+  resolveAlert,
+  upsertActiveAlert,
+  type AlertRow,
+} from "./db.js";
 import { evaluateFarm } from "./evaluate.js";
 import { sendWebhookAlert } from "./notify.js";
-import type { ActiveAlert, AlertCandidate, AlertConfig } from "./types.js";
+import type {
+  ActiveAlert,
+  AlertCandidate,
+  AlertConfig,
+  AlertHistoryItem,
+} from "./types.js";
+
+function alertRowToHistoryItem(row: AlertRow): AlertHistoryItem {
+  const fired = new Date(row.fired_at).getTime();
+  const endMs = row.resolved_at
+    ? new Date(row.resolved_at).getTime()
+    : Date.now();
+  return {
+    id: row.id,
+    hostname: row.hostname,
+    kind: row.kind,
+    severity: row.severity,
+    message: row.message,
+    active: row.active === 1,
+    fired_at: row.fired_at,
+    resolved_at: row.resolved_at,
+    duration_ms: Math.max(0, endMs - fired),
+    details: row.details,
+  };
+}
 
 function wasOffline(db: Database.Database, hostname: string): boolean {
   const row = getAlert(db, `${hostname}:node_offline`);
@@ -40,6 +74,26 @@ export function listActiveAlertsPublic(db: Database.Database): ActiveAlert[] {
     since: r.fired_at,
     resolved_at: r.resolved_at,
   }));
+}
+
+export function listAlertHistoryPublic(
+  db: Database.Database,
+  opts: {
+    limit?: number;
+    status?: AlertHistoryFilter;
+    hostname?: string;
+  },
+): { alerts: AlertHistoryItem[]; counts: { active: number; resolved: number; total: number } } {
+  const alerts = listAlertHistory(db, {
+    limit: opts.limit ?? 100,
+    status: opts.status ?? "all",
+    hostname: opts.hostname,
+  }).map(alertRowToHistoryItem);
+
+  return {
+    alerts,
+    counts: countAlertsByStatus(db),
+  };
 }
 
 export async function runAlertEvaluation(
