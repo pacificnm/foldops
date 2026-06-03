@@ -1,5 +1,5 @@
 import type { MachineSummary } from "../types";
-import { TempGauge } from "./TempGauge";
+import { formatTemp, formatUptime } from "../utils/format";
 
 function statusLabel(machine: MachineSummary): string {
   if (!machine.online) return "offline";
@@ -13,7 +13,11 @@ function statusLabel(machine: MachineSummary): string {
 export function CompactAgentTile({ machine }: { machine: MachineSummary }) {
   const latest = machine.latest;
   const progress = latest?.progress;
+  const load = latest?.payload?.system.loadAvg;
+  const uptime = latest?.payload?.system.uptime;
   const cpuTemp = latest?.cpu_temp ?? latest?.payload?.system.cpuTemp ?? null;
+  const chassisTemp =
+    latest?.chassis_temp ?? latest?.payload?.system.chassisTemp ?? null;
   const status = statusLabel(machine);
 
   return (
@@ -29,24 +33,45 @@ export function CompactAgentTile({ machine }: { machine: MachineSummary }) {
         </span>
       </header>
 
-      <TempGauge celsius={cpuTemp} />
+      <dl className="kiosk-stats">
+        <div>
+          <dt>Project</dt>
+          <dd className="mono">{latest?.project ?? "—"}</dd>
+        </div>
+        <div>
+          <dt>Load</dt>
+          <dd className="mono">
+            {load ? load.map((n) => n.toFixed(1)).join(" / ") : "—"}
+          </dd>
+        </div>
+        <div>
+          <dt>CPU temp</dt>
+          <dd className="mono">{formatTemp(cpuTemp)}</dd>
+        </div>
+        <div>
+          <dt>Chassis</dt>
+          <dd className="mono">{formatTemp(chassisTemp)}</dd>
+        </div>
+        <div className="kiosk-stats-wide">
+          <dt>Uptime</dt>
+          <dd>{uptime != null ? formatUptime(uptime) : "—"}</dd>
+        </div>
+        <div>
+          <dt>Progress</dt>
+          <dd>
+            {progress != null ? `${progress.toFixed(1)}%` : "—"}
+          </dd>
+        </div>
+      </dl>
 
-      <div className="kiosk-tile-progress">
-        <div className="kiosk-progress-bar" role="progressbar"
-          aria-valuenow={progress ?? 0}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label="Work unit progress"
-        >
+      {progress != null && (
+        <div className="progress-bar kiosk-tile-progress-bar">
           <div
-            className="kiosk-progress-fill"
-            style={{ width: `${progress != null ? Math.min(progress, 100) : 0}%` }}
+            className="progress-fill"
+            style={{ width: `${Math.min(progress, 100)}%` }}
           />
         </div>
-        <span className="kiosk-progress-pct mono">
-          {progress != null ? `${progress.toFixed(0)}%` : "—"}
-        </span>
-      </div>
+      )}
     </article>
   );
 }
