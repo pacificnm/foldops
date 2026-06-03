@@ -49,12 +49,21 @@ export const maintenanceSchema = z.object({
   rebootRequired: z.boolean(),
 });
 
+export const nodeLogsSchema = z.object({
+  fah: z.array(z.string()).max(200),
+  work: z.array(z.string()).max(200),
+  fahPath: z.string().optional(),
+  workPath: z.string().optional(),
+});
+
 export const ingestPayloadSchema = z.object({
   hostname: z.string().min(1),
   timestamp: z.string().datetime(),
   system: systemSchema,
   fah: fahSchema,
   maintenance: maintenanceSchema,
+  logs: nodeLogsSchema.optional(),
 });
 
 export type IngestPayload = z.infer<typeof ingestPayloadSchema>;
+export type NodeLogs = z.infer<typeof nodeLogsSchema>;

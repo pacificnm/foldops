@@ -5,8 +5,12 @@ import { promisify } from "node:util";
 import os from "node:os";
 import type { IngestPayload } from "@foldops/shared";
 import si from "systeminformation";
+import { getNewestWorkLogPath } from "./fah-work-log.js";
 import { collectFahStatus } from "./fah-status.js";
+import { readLogTail } from "./log-tail.js";
 import { collectTemperatures } from "./temperatures.js";
+
+const INGEST_LOG_LINES = 100;
 
 const execFileAsync = promisify(execFile);
 
@@ -115,11 +119,18 @@ export async function collectSnapshot(
   }
   lastNetwork = { rxBytes, txBytes, at: now };
 
-  const [aptUpdates, rebootRequired, temps] = await Promise.all([
-    getAptUpdatesAvailable(),
-    fileExists("/var/run/reboot-required"),
-    collectTemperatures(),
-  ]);
+  const [aptUpdates, rebootRequired, temps, fahTail, workPath] =
+    await Promise.all([
+      getAptUpdatesAvailable(),
+      fileExists("/var/run/reboot-required"),
+      collectTemperatures(),
+      readLogTail(fahLogPath, INGEST_LOG_LINES),
+      getNewestWorkLogPath(fahWorkDir),
+    ]);
+
+  const workTail = workPath
+    ? await readLogTail(workPath, INGEST_LOG_LINES)
+    : null;
 
   const loadAvg = os.loadavg() as [number, number, number];
   const memUsed = mem.active;
@@ -190,6 +201,12 @@ export async function collectSnapshot(
     maintenance: {
       aptUpdatesAvailable: aptUpdates,
       rebootRequired,
+    },
+    logs: {
+      fah: fahTail?.lines ?? [],
+      work: workTail?.lines ?? [],
+      ...(fahTail?.path ? { fahPath: fahTail.path } : {}),
+      ...(workTail?.path ? { workPath: workTail.path } : {}),
     },
   };
 }

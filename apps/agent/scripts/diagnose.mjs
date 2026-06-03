@@ -158,14 +158,16 @@ const wsPort = process.env.FAH_WS_PORT ?? "7396";
 try {
   const { stdout } = await execFileAsync("ss", ["-tlnp"]);
   if (stdout.includes(`:${wsPort}`)) {
-    console.log(`\n[OK] FAH WebSocket port ${wsPort} listening (PPD/TPF during CORE)`);
+    console.log(
+      `\n[OK] FAH WebSocket ${wsHost}:${wsPort} listening (PPD/TPF during CORE)`,
+    );
   } else {
     console.log(
-      `\n[INFO] port ${wsPort} not listening — PPD/TPF appear after client.db reaches RUN`,
+      `\n[INFO] ${wsHost}:${wsPort} not listening — PPD/TPF appear after client.db reaches RUN`,
     );
   }
 } catch {
-  console.log(`\n[INFO] could not check port ${wsPort} (ss missing)`);
+  console.log(`\n[INFO] could not check ${wsHost}:${wsPort} (ss missing)`);
 }
 
 if (supervisorUrl !== "(not set)" && tokenSet) {

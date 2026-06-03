@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { ingestPayloadSchema, type IngestPayload } from "@foldops/shared";
 import type Database from "better-sqlite3";
+import { fetchLiveAgentLogs, type LogSource } from "./agent-logs.js";
 import { fetchFahProject } from "./fah-projects.js";
 import {
   getLatestSnapshot,
@@ -14,6 +15,7 @@ import {
 export interface AppConfig {
   ingestToken: string;
   offlineThresholdMs: number;
+  agentHttpPort: number;
   afterIngest?: () => void;
   listAlerts?: () => { alerts: unknown[]; count: number };
 }
@@ -109,6 +111,81 @@ export function createApiRouter(
     }, 0);
 
     res.json({ machines, farm_ppd: Math.round(farmPpd * 100) / 100 });
+  });
+
+  router.get("/machines/:name/logs", async (req, res) => {
+    const machine = getMachine(db, req.params.name);
+    if (!machine) {
+      res.status(404).json({ error: "Machine not found" });
+      return;
+    }
+
+    const sourceParam = String(req.query.source ?? "fah");
+    if (sourceParam !== "fah" && sourceParam !== "work") {
+      res.status(400).json({ error: "source must be fah or work" });
+      return;
+    }
+    const source = sourceParam as LogSource;
+    const lines = Math.min(Math.max(Number(req.query.lines ?? 200), 1), 500);
+    const wantLive = req.query.live !== "0";
+
+    const latest = getLatestSnapshot(db, machine.hostname);
+    const payload = latest ? parsePayload(latest) : null;
+    const cached =
+      source === "fah"
+        ? {
+            lines: payload?.logs?.fah ?? [],
+            path: payload?.logs?.fahPath ?? null,
+          }
+        : {
+            lines: payload?.logs?.work ?? [],
+            path: payload?.logs?.workPath ?? null,
+          };
+
+    const online = isOnline(machine.last_seen, config.offlineThresholdMs);
+
+    if (wantLive && online && config.agentHttpPort > 0) {
+      try {
+        const live = await fetchLiveAgentLogs(
+          machine.hostname,
+          config.agentHttpPort,
+          config.ingestToken,
+          source,
+          lines,
+        );
+        res.json({
+          hostname: machine.hostname,
+          source,
+          lines: live.lines,
+          path: live.path || cached.path,
+          updated_at: new Date().toISOString(),
+          live: true,
+          online: true,
+        });
+        return;
+      } catch (err) {
+        console.warn(
+          `[logs] live fetch ${machine.hostname}/${source}:`,
+          err instanceof Error ? err.message : err,
+        );
+      }
+    }
+
+    res.json({
+      hostname: machine.hostname,
+      source,
+      lines: cached.lines.slice(-lines),
+      path: cached.path,
+      updated_at: latest?.created_at ?? null,
+      live: false,
+      online,
+      ...(wantLive && online
+        ? {
+            warning:
+              "Live pull failed — showing last ingested snapshot. Check AGENT_HTTP_PORT and firewall.",
+          }
+        : {}),
+    });
   });
 
   router.get("/machines/:name", (req, res) => {

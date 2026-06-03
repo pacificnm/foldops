@@ -7,7 +7,7 @@ const PROJECT_RE =
 const STEPS_RE =
   /Completed\s+(\d+)\s+out\s+of\s+(\d+)\s+steps\s+\(([\d.]+)%\)/i;
 
-async function findNewestWorkLog(
+export async function getNewestWorkLogPath(
   workDir: string,
 ): Promise<string | null> {
   let newest: { path: string; mtime: number } | null = null;
@@ -49,7 +49,7 @@ async function findNewestWorkLog(
 export async function parseFahWorkLog(
   workDir: string,
 ): Promise<FahLogState | null> {
-  const logPath = await findNewestWorkLog(workDir);
+  const logPath = await getNewestWorkLogPath(workDir);
   if (!logPath) return null;
 
   let content: string;

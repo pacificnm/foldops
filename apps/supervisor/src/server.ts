@@ -18,6 +18,7 @@ const HOST = process.env.HOST ?? "0.0.0.0";
 const DB_PATH = process.env.DB_PATH ?? "./data/foldops.db";
 const INGEST_TOKEN = process.env.INGEST_TOKEN;
 const OFFLINE_THRESHOLD_MS = Number(process.env.OFFLINE_THRESHOLD_MS ?? "120000");
+const AGENT_HTTP_PORT = Number(process.env.AGENT_HTTP_PORT ?? "9100");
 
 if (!INGEST_TOKEN) {
   console.error("INGEST_TOKEN is required");
@@ -43,6 +44,7 @@ app.use(
   createApiRouter(db, {
     ingestToken: INGEST_TOKEN,
     offlineThresholdMs: OFFLINE_THRESHOLD_MS,
+    agentHttpPort: AGENT_HTTP_PORT,
     afterIngest: runAlerts,
     listAlerts: () => {
       const alerts = listActiveAlertsPublic(db);

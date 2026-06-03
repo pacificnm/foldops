@@ -1,5 +1,4 @@
 import { useCallback, useEffect, useState } from "react";
-import { Link } from "react-router-dom";
 import { AlertBanner } from "../components/AlertBanner";
 import { MachineCard } from "../components/MachineCard";
 import { PageLayout } from "../components/PageLayout";

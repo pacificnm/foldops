@@ -1,3 +1,23 @@
+export type LogSource = "fah" | "work";
+
+export interface NodeLogs {
+  fah: string[];
+  work: string[];
+  fahPath?: string;
+  workPath?: string;
+}
+
+export interface MachineLogsResponse {
+  hostname: string;
+  source: LogSource;
+  lines: string[];
+  path: string | null;
+  updated_at: string | null;
+  live: boolean;
+  online: boolean;
+  warning?: string;
+}
+
 export interface MachineSummary {
   hostname: string;
   first_seen: string;
@@ -21,6 +41,7 @@ export interface MachineSummary {
     reboot_required: boolean;
     payload?: {
       fah: { tpf: string | null; recentErrors: string[] };
+      logs?: NodeLogs;
       system: {
         loadAvg: [number, number, number];
         uptime: number;

@@ -5,6 +5,8 @@ import {
 import type {
   AlertsResponse,
   FahProjectInfo,
+  LogSource,
+  MachineLogsResponse,
   MachineSummary,
   MachinesResponse,
   SnapshotsResponse,
@@ -26,6 +28,28 @@ export async function fetchMachines(): Promise<MachinesResponse> {
     throw new Error(`Failed to load machines (${res.status})`);
   }
   return res.json() as Promise<MachinesResponse>;
+}
+
+export async function fetchMachineLogs(
+  hostname: string,
+  source: LogSource,
+  opts?: { lines?: number; live?: boolean },
+): Promise<MachineLogsResponse> {
+  const params = new URLSearchParams({
+    source,
+    lines: String(opts?.lines ?? 200),
+  });
+  if (opts?.live === false) params.set("live", "0");
+
+  const res = await fetch(
+    `/api/machines/${encodeURIComponent(hostname)}/logs?${params}`,
+  );
+  if (!res.ok) {
+    throw new Error(
+      res.status === 404 ? "Machine not found" : `Failed to load logs (${res.status})`,
+    );
+  }
+  return res.json() as Promise<MachineLogsResponse>;
 }
 
 export async function fetchMachine(hostname: string): Promise<MachineSummary> {

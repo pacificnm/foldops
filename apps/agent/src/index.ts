@@ -1,4 +1,5 @@
 import "dotenv/config";
+import { startAgentHttp } from "./agent-http.js";
 import { collectSnapshot } from "./collector.js";
 
 const SUPERVISOR_URL = process.env.SUPERVISOR_URL ?? "http://localhost:3000";
@@ -10,6 +11,7 @@ const FAH_DB_PATH =
   process.env.FAH_DB_PATH ?? "/var/lib/fah-client/client.db";
 const FAH_WORK_DIR =
   process.env.FAH_WORK_DIR ?? "/var/lib/fah-client/work";
+const AGENT_HTTP_PORT = Number(process.env.AGENT_HTTP_PORT ?? "9100");
 
 if (!AGENT_TOKEN) {
   console.error("AGENT_TOKEN is required");
@@ -78,6 +80,14 @@ async function run(): Promise<void> {
   console.log(
     `FoldOps agent starting (supervisor: ${SUPERVISOR_URL}, interval: ${INTERVAL_MS}ms)`,
   );
+
+  startAgentHttp({
+    port: AGENT_HTTP_PORT,
+    token: AGENT_TOKEN!,
+    fahLogPath: FAH_LOG_PATH,
+    fahWorkDir: FAH_WORK_DIR,
+  });
+
   await probeSupervisor();
 
   const tick = async () => {

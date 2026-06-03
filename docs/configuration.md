@@ -34,6 +34,7 @@ Never commit `.env` files or `/etc/foldops/*.env` to version control.
 | `ALERT_WEBHOOK_URL` | — | No | Discord/Slack-compatible webhook for alert notifications |
 | `ALERTS_ENABLED` | auto | No | Set `true` or `1` to enable evaluation; defaults on when `ALERT_WEBHOOK_URL` is set |
 | `CPU_TEMP_ALERT_C` | `85` | No | Fire a warning when CPU temperature (°C) is at or above this value |
+| `AGENT_HTTP_PORT` | `9100` | No | TCP port for live log pull from agents (`0` = cached logs only) |
 
 When alerts are enabled, the supervisor evaluates farm state every 60 seconds and after each agent ingest. Active issues are stored in SQLite and exposed at `GET /api/alerts` for the kiosk and dashboard banners.
 
@@ -74,6 +75,7 @@ CPU_TEMP_ALERT_C=85
 | `INTERVAL_MS` | `60000` | No | Collection and POST interval in milliseconds |
 | `FAH_LOG_PATH` | `/var/log/fah-client/log.txt` | No | Path to the FAH client log file |
 | `FAH_DB_PATH` | `/var/lib/fah-client/client.db` | No | FAH v8 SQLite DB (progress, PPD, project) |
+| `AGENT_HTTP_PORT` | `9100` | No | HTTP port for supervisor log pull (`0` to disable) |
 
 ### Example (production)
 
@@ -82,7 +84,12 @@ SUPERVISOR_URL=http://fah-01:3000
 AGENT_TOKEN=a1b2c3d4e5f6...
 INTERVAL_MS=60000
 FAH_LOG_PATH=/var/log/fah-client/log.txt
+AGENT_HTTP_PORT=9100
 ```
+
+Agents expose `GET /logs/fah` and `GET /logs/work` (Bearer `AGENT_TOKEN`) for on-demand log viewing. The supervisor proxies these at `GET /api/machines/:hostname/logs`. Each ingest also caches the last 100 lines per log for offline viewing.
+
+Ensure farm nodes can reach each other on `AGENT_HTTP_PORT` (default 9100) from the supervisor host.
 
 ---
 
