@@ -1,7 +1,12 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { ingestPayloadSchema, type IngestPayload } from "@foldops/shared";
 import type Database from "better-sqlite3";
+import {
+  fetchAgentControlStatus,
+  pushAgentControl,
+} from "./agent-control.js";
 import { fetchLiveAgentLogs, type LogSource } from "./agent-logs.js";
+import { isControlAction } from "@foldops/shared";
 import { startAgentDeploy } from "./deploy.js";
 import { getDeployRun, listDeployRuns } from "./deploy-db.js";
 import { fetchFahProject } from "./fah-projects.js";
@@ -19,6 +24,7 @@ export interface AppConfig {
   offlineThresholdMs: number;
   agentHttpPort: number;
   deployEnabled: boolean;
+  controlEnabled: boolean;
   afterIngest?: () => void;
   listAlerts?: () => { alerts: unknown[]; count: number };
 }
@@ -167,10 +173,24 @@ export function createApiRouter(
         });
         return;
       } catch (err) {
+        const liveError =
+          err instanceof Error ? err.message : String(err);
         console.warn(
-          `[logs] live fetch ${machine.hostname}/${source}:`,
-          err instanceof Error ? err.message : err,
+          `[logs] live fetch ${machine.hostname}/${source}: ${liveError}`,
         );
+        res.json({
+          hostname: machine.hostname,
+          source,
+          lines: cached.lines.slice(-lines),
+          path: cached.path,
+          updated_at: latest?.created_at ?? null,
+          live: false,
+          online: true,
+          live_error: liveError,
+          live_url: `http://${machine.hostname}:${config.agentHttpPort}/logs/${source}`,
+          warning: `Live pull failed: ${liveError}`,
+        });
+        return;
       }
     }
 
@@ -182,13 +202,84 @@ export function createApiRouter(
       updated_at: latest?.created_at ?? null,
       live: false,
       online,
-      ...(wantLive && online
-        ? {
-            warning:
-              "Live pull failed — showing last ingested snapshot. Check AGENT_HTTP_PORT and firewall.",
-          }
-        : {}),
     });
+  });
+
+  router.get("/machines/:name/control/status", async (req, res) => {
+    const machine = getMachine(db, req.params.name);
+    if (!machine) {
+      res.status(404).json({ error: "Machine not found" });
+      return;
+    }
+    if (!config.controlEnabled) {
+      res.status(403).json({ error: "Remote control disabled (set CONTROL_ENABLED=true)" });
+      return;
+    }
+    if (!isOnline(machine.last_seen, config.offlineThresholdMs)) {
+      res.status(503).json({ error: "Node offline" });
+      return;
+    }
+
+    try {
+      const status = await fetchAgentControlStatus(
+        machine.hostname,
+        config.agentHttpPort,
+        config.ingestToken,
+      );
+      res.json({ hostname: machine.hostname, ...status });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      res.status(502).json({ error: message });
+    }
+  });
+
+  router.post("/machines/:name/control", async (req, res) => {
+    const machine = getMachine(db, req.params.name);
+    if (!machine) {
+      res.status(404).json({ error: "Machine not found" });
+      return;
+    }
+    if (!config.controlEnabled) {
+      res.status(403).json({ error: "Remote control disabled (set CONTROL_ENABLED=true)" });
+      return;
+    }
+    if (!isOnline(machine.last_seen, config.offlineThresholdMs)) {
+      res.status(503).json({ error: "Node offline" });
+      return;
+    }
+
+    const action = (req.body as { action?: string })?.action;
+    if (!action || !isControlAction(action)) {
+      res.status(400).json({ error: "Invalid or missing action" });
+      return;
+    }
+
+    try {
+      const result = await pushAgentControl(
+        machine.hostname,
+        config.agentHttpPort,
+        config.ingestToken,
+        action,
+      );
+      res.json({ hostname: machine.hostname, ...result });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      const likelyRestart =
+        action === "agent.restart" &&
+        /ECONNRESET|socket hang up|fetch failed/i.test(message);
+      if (likelyRestart) {
+        res.json({
+          hostname: machine.hostname,
+          ok: true,
+          action,
+          message: "Agent restarted (connection closed)",
+          stdout: "",
+          stderr: message,
+        });
+        return;
+      }
+      res.status(502).json({ error: message });
+    }
   });
 
   router.get("/machines/:name", (req, res) => {

@@ -36,6 +36,7 @@ Never commit `.env` files or `/etc/foldops/*.env` to version control.
 | `CPU_TEMP_ALERT_C` | `85` | No | Fire a warning when CPU temperature (°C) is at or above this value |
 | `AGENT_HTTP_PORT` | `9100` | No | TCP port for live log pull from agents (`0` = cached logs only) |
 | `DEPLOY_ENABLED` | off | No | Set `true` to enable `POST /api/deploy/agents` from the dashboard |
+| `CONTROL_ENABLED` | off | No | Set `true` to enable remote control from the machine **Control** tab |
 
 When alerts are enabled, the supervisor evaluates farm state every 60 seconds and after each agent ingest. Active issues are stored in SQLite and exposed at `GET /api/alerts` for the kiosk and dashboard banners.
 
@@ -80,6 +81,8 @@ CPU_TEMP_ALERT_C=85
 | `UPDATE_ENABLED` | off | No | Allow supervisor to run `scripts/update-agent.sh` via `POST /update` |
 | `FOLDOPS_ROOT` | `/opt/foldops` | No | Git checkout root on the node |
 | `UPDATE_SCRIPT` | `$FOLDOPS_ROOT/scripts/update-agent.sh` | No | Update script path |
+| `CONTROLS_ENABLED` | off | No | Allow `POST /control` (start/stop/restart agent & FAH, pause/resume) |
+| `CONTROLS_ALLOW_REBOOT` | off | No | Allow `host.reboot` action |
 
 ### Example (production)
 
@@ -93,7 +96,7 @@ AGENT_HTTP_PORT=9100
 
 Agents expose `GET /logs/fah` and `GET /logs/work` (Bearer `AGENT_TOKEN`) for on-demand log viewing. The supervisor proxies these at `GET /api/machines/:hostname/logs`. Each ingest also caches the last 100 lines per log for offline viewing.
 
-Ensure farm nodes can reach each other on `AGENT_HTTP_PORT` (default 9100) from the supervisor host.
+The supervisor must resolve each agent **hostname** (e.g. `fah-02`) to a LAN IP when pulling logs or deploying. Ingest uses `SUPERVISOR_URL` by IP and does not need this. After DHCP changes, update `/etc/hosts` on the supervisor (see [installation.md](installation.md#network-connectivity)). Ensure TCP `AGENT_HTTP_PORT` (default 9100) is reachable from the supervisor to each agent.
 
 ---
 

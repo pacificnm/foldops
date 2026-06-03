@@ -23,6 +23,9 @@ const AGENT_HTTP_PORT = Number(process.env.AGENT_HTTP_PORT ?? "9100");
 const DEPLOY_ENABLED =
   process.env.DEPLOY_ENABLED === "1" ||
   process.env.DEPLOY_ENABLED === "true";
+const CONTROL_ENABLED =
+  process.env.CONTROL_ENABLED === "1" ||
+  process.env.CONTROL_ENABLED === "true";
 
 if (!INGEST_TOKEN) {
   console.error("INGEST_TOKEN is required");
@@ -51,6 +54,7 @@ app.use(
     offlineThresholdMs: OFFLINE_THRESHOLD_MS,
     agentHttpPort: AGENT_HTTP_PORT,
     deployEnabled: DEPLOY_ENABLED,
+    controlEnabled: CONTROL_ENABLED,
     afterIngest: runAlerts,
     listAlerts: () => {
       const alerts = listActiveAlertsPublic(db);
@@ -85,5 +89,8 @@ app.listen(PORT, HOST, () => {
   }
   if (DEPLOY_ENABLED) {
     console.log(`[deploy] agent push enabled (port ${AGENT_HTTP_PORT})`);
+  }
+  if (CONTROL_ENABLED) {
+    console.log(`[control] remote node control enabled (port ${AGENT_HTTP_PORT})`);
   }
 });

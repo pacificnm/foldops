@@ -1,7 +1,13 @@
 import { createServer, type IncomingMessage, type ServerResponse } from "node:http";
 import { URL } from "node:url";
+import { isControlAction } from "./control-actions.js";
 import { readLogTail } from "./log-tail.js";
 import { getNewestWorkLogPath } from "./fah-work-log.js";
+import {
+  executeControlAction,
+  getControlStatus,
+  scheduleAgentSelfRestart,
+} from "./node-control.js";
 import { isUpdateInFlight, restartFoldopsAgent, runAgentUpdate } from "./run-update.js";
 
 function sendJson(res: ServerResponse, status: number, body: unknown): void {
@@ -15,12 +21,24 @@ function parseAuth(req: IncomingMessage, token: string): boolean {
   return header.slice(7) === token;
 }
 
+async function readJsonBody(req: IncomingMessage): Promise<unknown> {
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    chunks.push(chunk as Buffer);
+  }
+  const raw = Buffer.concat(chunks).toString("utf8").trim();
+  if (!raw) return {};
+  return JSON.parse(raw) as unknown;
+}
+
 export function startAgentHttp(opts: {
   port: number;
   token: string;
   fahLogPath: string;
   fahWorkDir: string;
   updateEnabled: boolean;
+  controlsEnabled: boolean;
+  allowReboot: boolean;
   foldopsRoot: string;
   updateScript: string;
 }): void {
@@ -38,6 +56,52 @@ export function startAgentHttp(opts: {
     }
 
     const url = new URL(req.url, "http://127.0.0.1");
+
+    if (req.method === "GET" && url.pathname === "/control/status") {
+      if (!opts.controlsEnabled) {
+        sendJson(res, 403, { error: "Controls disabled (set CONTROLS_ENABLED=true)" });
+        return;
+      }
+      try {
+        const status = await getControlStatus();
+        sendJson(res, 200, status);
+      } catch (err) {
+        sendJson(res, 500, {
+          error: err instanceof Error ? err.message : "Failed to read status",
+        });
+      }
+      return;
+    }
+
+    if (req.method === "POST" && url.pathname === "/control") {
+      if (!opts.controlsEnabled) {
+        sendJson(res, 403, { error: "Controls disabled (set CONTROLS_ENABLED=true)" });
+        return;
+      }
+
+      try {
+        const body = (await readJsonBody(req)) as { action?: string };
+        const action = body.action;
+        if (!action || !isControlAction(action)) {
+          sendJson(res, 400, { error: "Invalid or missing action" });
+          return;
+        }
+
+        const result = await executeControlAction(action, {
+          allowReboot: opts.allowReboot,
+        });
+        sendJson(res, 200, result);
+
+        if (result.ok && action === "agent.restart") {
+          scheduleAgentSelfRestart();
+        }
+      } catch (err) {
+        sendJson(res, 500, {
+          error: err instanceof Error ? err.message : "Control failed",
+        });
+      }
+      return;
+    }
 
     if (req.method === "POST" && url.pathname === "/update") {
       if (!opts.updateEnabled) {
@@ -131,7 +195,10 @@ export function startAgentHttp(opts: {
     }
   });
 
-  const endpoints = ["/logs/fah", "/logs/work"];
+  const endpoints = ["GET /logs/fah", "GET /logs/work"];
+  if (opts.controlsEnabled) {
+    endpoints.push("GET /control/status", "POST /control");
+  }
   if (opts.updateEnabled) endpoints.push("POST /update");
 
   server.listen(opts.port, "0.0.0.0", () => {

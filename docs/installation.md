@@ -322,6 +322,8 @@ systemctl restart foldops-agent
 | `Connect Timeout` to supervisor | Supervisor not running, wrong IP, or **firewall** blocking port 3000 — see [Network connectivity](#network-connectivity) |
 | Progress OK, PPD/TPF `—` | PPD/TPF only in `client.db` — run agent as root (`systemctl`), install `sqlite3`: `apt install sqlite3`, redeploy latest agent |
 | Progress/PPD show `—` | Redeploy agent (Node 22+); confirm `FAH_DB_PATH` exists and is readable; check `journalctl -u foldops-agent` for warnings |
+| Live log pull failed (cached snapshot OK) | On supervisor: `/etc/hosts` entries for each `fah-0N`; agent listening on `AGENT_HTTP_PORT`; `AGENT_TOKEN` = `INGEST_TOKEN`; `node scripts/diagnose-log-pull.mjs fah-02` |
+| Control tab errors | Same as live logs (`/etc/hosts`, port 9100); `CONTROLS_ENABLED=true` on agent, `CONTROL_ENABLED=true` on supervisor; reboot needs `CONTROLS_ALLOW_REBOOT=true` |
 
 ### Network connectivity
 
@@ -359,6 +361,20 @@ curl -m 5 http://192.168.4.10:3000/api/machines
 ```
 
 If this times out from fah-02 but works on the supervisor host, it is a network/firewall issue — not an agent bug. Fix connectivity before expecting nodes to show online.
+
+**Hostnames (`/etc/hosts`)** — Live logs, deploy, and other supervisor→agent calls use `http://<hostname>:9100` (the name from each agent’s `os.hostname()`, e.g. `fah-02`). Ingest only needs agents to reach the supervisor by IP; it does **not** require the supervisor to resolve worker hostnames. After a router/DHCP change, add stable entries on **the supervisor host** (and anywhere you run `curl` by name):
+
+```bash
+# /etc/hosts on fah-01 (supervisor) — use your current LAN IPs
+192.168.4.10  fah-01
+192.168.4.11  fah-02
+192.168.4.12  fah-03
+192.168.4.13  fah-04
+```
+
+Verify: `getent hosts fah-02` and  
+`curl -H "Authorization: Bearer $INGEST_TOKEN" http://fah-02:9100/logs/fah?lines=1`
+
 | Supervisor won't start | `INGEST_TOKEN` set; `DB_PATH` directory writable by `foldops` user |
 | Build fails on sqlite | Install `build-essential` and `python3`, re-run `npm install` |
 | CPU temp shows `—` | Check hwmon: `ls /sys/class/hwmon/`; verify `coretemp` or platform driver loaded |

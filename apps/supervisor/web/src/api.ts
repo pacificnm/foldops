@@ -4,6 +4,9 @@ import {
 } from "./fahProject";
 import type {
   AlertsResponse,
+  ControlAction,
+  ControlResult,
+  ControlStatus,
   DeployRun,
   DeployRunsResponse,
   FahProjectInfo,
@@ -15,6 +18,40 @@ import type {
 } from "./types";
 
 const FAH_PROJECT_API = "https://api.foldingathome.org/project";
+
+export async function fetchMachineControlStatus(
+  hostname: string,
+): Promise<ControlStatus> {
+  const res = await fetch(
+    `/api/machines/${encodeURIComponent(hostname)}/control/status`,
+  );
+  if (!res.ok) {
+    const body = (await res.json().catch(() => ({}))) as { error?: string };
+    throw new Error(body.error ?? `Failed to load control status (${res.status})`);
+  }
+  return res.json() as Promise<ControlStatus>;
+}
+
+export async function runMachineControl(
+  hostname: string,
+  action: ControlAction,
+): Promise<ControlResult> {
+  const res = await fetch(
+    `/api/machines/${encodeURIComponent(hostname)}/control`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    },
+  );
+  const body = (await res.json().catch(() => ({}))) as ControlResult & {
+    error?: string;
+  };
+  if (!res.ok) {
+    throw new Error(body.error ?? `Control failed (${res.status})`);
+  }
+  return body;
+}
 
 export async function fetchDeployRuns(): Promise<DeployRunsResponse> {
   const res = await fetch("/api/deploy/runs");

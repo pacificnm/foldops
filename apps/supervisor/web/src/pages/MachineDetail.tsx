@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { HistoryChart } from "../components/HistoryChart";
+import { MachineControlsPanel } from "../components/MachineControlsPanel";
 import { MachineLogsPanel } from "../components/MachineLogsPanel";
 import { PageLayout } from "../components/PageLayout";
 import { ProjectInfoPanel } from "../components/ProjectInfoPanel";
@@ -23,6 +24,7 @@ const RANGES = [
 const PAGE_TABS: TabItem[] = [
   { id: "overview", label: "Overview" },
   { id: "logs", label: "Logs" },
+  { id: "control", label: "Control" },
 ];
 
 export function MachineDetail() {
@@ -307,6 +309,10 @@ export function MachineDetail() {
 
         {pageTab === "logs" && (
           <MachineLogsPanel hostname={hostname} machine={machine} />
+        )}
+
+        {pageTab === "control" && (
+          <MachineControlsPanel hostname={hostname} machine={machine} />
         )}
       </Tabs>
     </PageLayout>

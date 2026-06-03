@@ -16,6 +16,8 @@ export interface MachineLogsResponse {
   live: boolean;
   online: boolean;
   warning?: string;
+  live_error?: string;
+  live_url?: string;
 }
 
 export interface MachineSummary {
@@ -115,6 +117,33 @@ export interface DeployRun {
 
 export interface DeployRunsResponse {
   runs: DeployRun[];
+}
+
+export type ControlAction =
+  | "agent.start"
+  | "agent.stop"
+  | "agent.restart"
+  | "fah.start"
+  | "fah.stop"
+  | "fah.restart"
+  | "fah.pause"
+  | "fah.resume"
+  | "fah.finish"
+  | "host.reboot";
+
+export interface ControlStatus {
+  hostname?: string;
+  foldops_agent: string;
+  fah_client: string;
+}
+
+export interface ControlResult {
+  hostname?: string;
+  ok: boolean;
+  action: ControlAction;
+  message: string;
+  stdout: string;
+  stderr: string;
 }
 
 export interface FahProjectInfo {

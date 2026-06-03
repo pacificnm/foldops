@@ -69,7 +69,14 @@ export function LogViewer({ hostname, source, online }: LogViewerProps) {
       </div>
 
       {data?.warning && (
-        <p className="log-viewer-warning">{data.warning}</p>
+        <div className="log-viewer-warning">
+          <p>{data.warning}</p>
+          {data.live_url && (
+            <p className="log-viewer-warning-detail mono">
+              Tried: {data.live_url}
+            </p>
+          )}
+        </div>
       )}
       {error && <p className="message error">{error}</p>}
 

@@ -948,3 +948,97 @@ body {
 .footer a:hover {
   text-decoration: underline;
 }
+
+.machine-controls-intro {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.machine-controls-intro code {
+  font-family: var(--mono);
+  font-size: 0.85em;
+}
+
+.machine-controls-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1.25rem;
+  margin-bottom: 1rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 0.88rem;
+}
+
+.machine-controls-refresh {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--accent);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.25rem 0.55rem;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.machine-controls-ok {
+  color: var(--ok);
+}
+
+.machine-controls-group {
+  margin-bottom: 1.5rem;
+}
+
+.machine-controls-group-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.95rem;
+}
+
+.machine-controls-group-desc {
+  margin: 0 0 0.65rem;
+  font-size: 0.82rem;
+  color: var(--muted);
+}
+
+.machine-controls-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.machine-controls-btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.45rem 0.8rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.machine-controls-btn:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.machine-controls-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.machine-controls-btn--danger {
+  border-color: color-mix(in srgb, var(--danger) 45%, var(--border));
+}
+
+.machine-controls-btn--danger:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+}

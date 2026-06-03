@@ -18,6 +18,12 @@ const UPDATE_SCRIPT =
 const UPDATE_ENABLED =
   process.env.UPDATE_ENABLED === "1" ||
   process.env.UPDATE_ENABLED === "true";
+const CONTROLS_ENABLED =
+  process.env.CONTROLS_ENABLED === "1" ||
+  process.env.CONTROLS_ENABLED === "true";
+const CONTROLS_ALLOW_REBOOT =
+  process.env.CONTROLS_ALLOW_REBOOT === "1" ||
+  process.env.CONTROLS_ALLOW_REBOOT === "true";
 
 if (!AGENT_TOKEN) {
   console.error("AGENT_TOKEN is required");
@@ -93,6 +99,8 @@ async function run(): Promise<void> {
     fahLogPath: FAH_LOG_PATH,
     fahWorkDir: FAH_WORK_DIR,
     updateEnabled: UPDATE_ENABLED,
+    controlsEnabled: CONTROLS_ENABLED,
+    allowReboot: CONTROLS_ALLOW_REBOOT,
     foldopsRoot: FOLDOPS_ROOT,
     updateScript: UPDATE_SCRIPT,
   });
