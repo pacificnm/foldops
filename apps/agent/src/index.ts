@@ -24,6 +24,8 @@ const CONTROLS_ENABLED =
 const CONTROLS_ALLOW_REBOOT =
   process.env.CONTROLS_ALLOW_REBOOT === "1" ||
   process.env.CONTROLS_ALLOW_REBOOT === "true";
+const FAH_DONOR_ID = process.env.FAH_DONOR_ID?.trim() || null;
+const FAH_TEAM_NUMBER = process.env.FAH_TEAM_NUMBER?.trim() || null;
 
 if (!AGENT_TOKEN) {
   console.error("AGENT_TOKEN is required");
@@ -35,6 +37,7 @@ async function postSnapshot(): Promise<void> {
     FAH_LOG_PATH,
     FAH_DB_PATH,
     FAH_WORK_DIR,
+    { donor: FAH_DONOR_ID, team: FAH_TEAM_NUMBER },
   );
   const url = `${SUPERVISOR_URL.replace(/\/$/, "")}/api/ingest`;
 

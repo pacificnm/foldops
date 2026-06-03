@@ -63,6 +63,7 @@ export async function collectSnapshot(
   fahLogPath: string,
   fahDbPath: string,
   fahWorkDir: string,
+  fahStats: { donor: string | null; team: string | null },
 ): Promise<IngestPayload> {
   const hostname = os.hostname();
   const [mem, fsSize, currentLoad, networkStats, fahStatus] =
@@ -197,6 +198,8 @@ export async function collectSnapshot(
       ppd: fahLog.ppd,
       tpf: fahLog.tpf,
       recentErrors: fahLog.recentErrors,
+      statsDonor: fahStats.donor,
+      statsTeam: fahStats.team,
     },
     maintenance: {
       aptUpdatesAvailable: aptUpdates,

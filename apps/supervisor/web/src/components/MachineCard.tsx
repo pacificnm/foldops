@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { FahStatsLinks } from "./FahStatsLinks";
 import type { MachineSummary } from "../types";
 import {
   formatLastSeen,
@@ -13,6 +14,8 @@ export function MachineCard({ machine }: { machine: MachineSummary }) {
   const uptime = latest?.payload?.system.uptime;
   const tpf = latest?.payload?.fah?.tpf;
   const errors = latest?.payload?.fah?.recentErrors ?? [];
+  const statsDonor = latest?.payload?.fah?.statsDonor;
+  const statsTeam = latest?.payload?.fah?.statsTeam;
 
   return (
     <article className={`card ${machine.online ? "online" : "offline"}`}>
@@ -70,6 +73,7 @@ export function MachineCard({ machine }: { machine: MachineSummary }) {
             />
           </div>
         )}
+        <FahStatsLinks donor={statsDonor} team={statsTeam} className="card-fah-stats" />
       </div>
 
       <div className="card-section">

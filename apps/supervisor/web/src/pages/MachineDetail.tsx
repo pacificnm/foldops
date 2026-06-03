@@ -4,6 +4,7 @@ import { HistoryChart } from "../components/HistoryChart";
 import { MachineControlsPanel } from "../components/MachineControlsPanel";
 import { MachineLogsPanel } from "../components/MachineLogsPanel";
 import { PageLayout } from "../components/PageLayout";
+import { FahStatsLinks } from "../components/FahStatsLinks";
 import { ProjectInfoPanel } from "../components/ProjectInfoPanel";
 import { Tabs, type TabItem } from "../components/Tabs";
 import { fetchFahProject, fetchMachine, fetchSnapshots } from "../api";
@@ -139,6 +140,10 @@ export function MachineDetail() {
           {machine && (
             <span>Last seen {formatLastSeen(machine.last_seen)}</span>
           )}
+          <FahStatsLinks
+            donor={latest?.payload?.fah?.statsDonor}
+            team={latest?.payload?.fah?.statsTeam}
+          />
         </div>
       }
     >

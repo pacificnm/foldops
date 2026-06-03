@@ -27,7 +27,7 @@ Backlog of possible features to revisit. Not committed work — pick items when 
 
 | Idea | Why |
 |------|-----|
-| Donor / team stats link | Tile or machine row → stats.foldingathome.org (donor ID in agent env). |
+| ~~Donor / team stats link~~ | Done — `FAH_DONOR_ID` / `FAH_TEAM_NUMBER` on agent; links on kiosk tile, machine card, detail header. |
 | WU / slot detail | GPU vs CPU slots, slot state from `client.db` or WebSocket. |
 | PPD leaderboard view | Sort nodes by current PPD; spot stuck or idle nodes. |
 | ~~Stuck detection~~ | **Done** — `ALERT_STUCK_HOURS` (default 4h, `0` = off). |

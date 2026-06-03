@@ -137,6 +137,13 @@
   margin-bottom: 0.1rem;
 }
 
+.kiosk-tile-head-right {
+  display: flex;
+  align-items: baseline;
+  gap: 0.35rem;
+  flex-shrink: 0;
+}
+
 .kiosk-tile-name {
   margin: 0;
   font-size: 0.9rem;

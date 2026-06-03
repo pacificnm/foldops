@@ -87,6 +87,8 @@ CPU_TEMP_ALERT_C=85
 | `UPDATE_SCRIPT` | `$FOLDOPS_ROOT/scripts/update-agent.sh` | No | Update script path |
 | `CONTROLS_ENABLED` | off | No | Allow `POST /control` (start/stop/restart agent & FAH, pause/resume) |
 | `CONTROLS_ALLOW_REBOOT` | off | No | Allow `host.reboot` action |
+| `FAH_DONOR_ID` | — | No | Donor name or ID for [stats.foldingathome.org](https://stats.foldingathome.org) links in the UI |
+| `FAH_TEAM_NUMBER` | — | No | Team number for team stats links in the UI |
 
 ### Example (production)
 

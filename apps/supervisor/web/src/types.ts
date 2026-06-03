@@ -42,7 +42,12 @@ export interface MachineSummary {
     apt_updates: number;
     reboot_required: boolean;
     payload?: {
-      fah: { tpf: string | null; recentErrors: string[] };
+      fah: {
+        tpf: string | null;
+        recentErrors: string[];
+        statsDonor?: string | null;
+        statsTeam?: string | null;
+      };
       logs?: NodeLogs;
       system: {
         loadAvg: [number, number, number];

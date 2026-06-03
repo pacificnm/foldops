@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { FahStatsLinks } from "./FahStatsLinks";
 import type { MachineSummary } from "../types";
 import { cpuTempLevel, formatTemp, formatUptime } from "../utils/format";
 
@@ -20,6 +21,8 @@ export function CompactAgentTile({ machine }: { machine: MachineSummary }) {
   const chassisTemp =
     latest?.chassis_temp ?? latest?.payload?.system.chassisTemp ?? null;
   const status = statusLabel(machine);
+  const statsDonor = latest?.payload?.fah?.statsDonor;
+  const statsTeam = latest?.payload?.fah?.statsTeam;
 
   return (
     <Link
@@ -28,11 +31,19 @@ export function CompactAgentTile({ machine }: { machine: MachineSummary }) {
     >
       <header className="kiosk-tile-head">
         <h2 className="kiosk-tile-name">{machine.hostname}</h2>
-        <span
-          className={`kiosk-tile-status ${machine.online ? "kiosk-tile-status--ok" : "kiosk-tile-status--warn"}`}
-        >
-          {status}
-        </span>
+        <div className="kiosk-tile-head-right">
+          <FahStatsLinks
+            donor={statsDonor}
+            team={statsTeam}
+            compact
+            stopPropagation
+          />
+          <span
+            className={`kiosk-tile-status ${machine.online ? "kiosk-tile-status--ok" : "kiosk-tile-status--warn"}`}
+          >
+            {status}
+          </span>
+        </div>
       </header>
 
       <dl className="kiosk-stats">

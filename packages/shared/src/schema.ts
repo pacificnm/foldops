@@ -42,6 +42,8 @@ export const fahSchema = z.object({
   ppd: z.number().nullable(),
   tpf: z.string().nullable(),
   recentErrors: z.array(z.string()),
+  statsDonor: z.string().nullable().optional(),
+  statsTeam: z.string().nullable().optional(),
 });
 
 export const maintenanceSchema = z.object({

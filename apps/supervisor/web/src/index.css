@@ -229,6 +229,34 @@ body {
   border-top: 1px solid var(--border);
 }
 
+.fah-stats-links {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+}
+
+.fah-stats-links--compact {
+  font-size: 0.58rem;
+}
+
+.fah-stats-links a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.fah-stats-links a:hover {
+  text-decoration: underline;
+}
+
+.fah-stats-sep {
+  color: var(--muted);
+}
+
+.card-fah-stats {
+  margin-top: 0.5rem;
+}
+
 .stats {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
