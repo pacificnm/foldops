@@ -36,6 +36,7 @@ Never commit `.env` files or `/etc/foldops/*.env` to version control.
 | `ALERT_DASHBOARD_URL` | — | No | Base URL for machine links in Discord embeds (e.g. `http://fah-01:3000`) |
 | `ALERT_DISCORD_USERNAME` | `FoldOps` | No | Webhook display name in Discord |
 | `CPU_TEMP_ALERT_C` | `85` | No | Fire a warning when CPU temperature (°C) is at or above this value |
+| `ALERT_STUCK_HOURS` | `4` | No | Alert when FAH progress barely moves for this many hours (`0` = off) |
 | `AGENT_HTTP_PORT` | `9100` | No | TCP port for live log pull from agents (`0` = cached logs only) |
 | `DEPLOY_ENABLED` | off | No | Set `true` to enable `POST /api/deploy/agents` from the dashboard |
 | `CONTROL_ENABLED` | off | No | Set `true` to enable remote control from the machine **Control** tab |
@@ -50,6 +51,7 @@ When alerts are enabled, the supervisor evaluates farm state every 60 seconds an
 - FAH client not active (`fah_status` ≠ `active`)
 - FAH client service failed
 - Recent FAH log errors in the agent payload
+- FAH progress unchanged for `ALERT_STUCK_HOURS` while `fah-client` is active (compares ingest snapshots)
 
 Discord receives **rich embeds** (one message per event). Slack and other hooks get plain text. Test with `POST /api/alerts/test`. See [alerts.md](alerts.md). Without a webhook URL, events are logged to the supervisor journal only.
 

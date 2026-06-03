@@ -30,7 +30,7 @@ Backlog of possible features to revisit. Not committed work — pick items when 
 | Donor / team stats link | Tile or machine row → stats.foldingathome.org (donor ID in agent env). |
 | WU / slot detail | GPU vs CPU slots, slot state from `client.db` or WebSocket. |
 | PPD leaderboard view | Sort nodes by current PPD; spot stuck or idle nodes. |
-| Stuck detection | Alert if progress unchanged for N hours while `fah-client` is active. |
+| ~~Stuck detection~~ | **Done** — `ALERT_STUCK_HOURS` (default 4h, `0` = off). |
 | Pause / resume whole farm | One-click all-node pause/resume (extends Control tab). |
 
 ---

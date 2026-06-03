@@ -7,6 +7,7 @@ const KIND_LABELS: Record<AlertKind, string> = {
   fah_inactive: "FAH inactive",
   fah_failed: "FAH failed",
   fah_errors: "FAH errors",
+  fah_stuck: "FAH stuck",
 };
 
 export function formatKindLabel(kind: AlertKind): string {

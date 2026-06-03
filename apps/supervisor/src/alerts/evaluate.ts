@@ -1,6 +1,7 @@
 import type { IngestPayload } from "@foldops/shared";
 import type { SnapshotRow } from "../db.js";
 import type { MachineRow } from "../db.js";
+import { detectStuckProgress } from "./stuck.js";
 import type { AlertCandidate, AlertConfig } from "./types.js";
 
 function alertId(hostname: string, kind: string): string {
@@ -18,6 +19,7 @@ function parsePayload(row: SnapshotRow): IngestPayload {
 export function evaluateMachine(
   machine: MachineRow,
   latest: SnapshotRow | undefined,
+  snapshotsSinceStuckCutoff: SnapshotRow[],
   online: boolean,
   config: AlertConfig,
   wasOffline: boolean,
@@ -80,6 +82,19 @@ export function evaluateMachine(
       severity: "warning",
       message: `${host} fah-client is ${fahStatus} (not folding)`,
     });
+  } else if (config.stuckProgressHours > 0) {
+    const stuckMs = config.stuckProgressHours * 3_600_000;
+    const stuck = detectStuckProgress(snapshotsSinceStuckCutoff, stuckMs);
+    if (stuck) {
+      out.push({
+        id: alertId(host, "fah_stuck"),
+        hostname: host,
+        kind: "fah_stuck",
+        severity: "warning",
+        message: `${host} FAH progress stuck at ${stuck.progress.toFixed(1)}% for ~${stuck.spanHours}h (threshold ${config.stuckProgressHours}h)`,
+        details: `Range in window: ${stuck.minProgress.toFixed(1)}–${stuck.maxProgress.toFixed(1)}%`,
+      });
+    }
   }
 
   if (errors.length > 0) {
@@ -100,6 +115,7 @@ export function evaluateMachine(
 export function evaluateFarm(
   machines: MachineRow[],
   getLatest: (hostname: string) => SnapshotRow | undefined,
+  getSnapshotsSinceStuckCutoff: (hostname: string) => SnapshotRow[],
   isOnline: (lastSeen: string) => boolean,
   wasOffline: (hostname: string) => boolean,
   config: AlertConfig,
@@ -111,6 +127,7 @@ export function evaluateFarm(
       ...evaluateMachine(
         m,
         getLatest(m.hostname),
+        getSnapshotsSinceStuckCutoff(m.hostname),
         online,
         config,
         wasOffline(m.hostname),

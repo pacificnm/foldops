@@ -52,6 +52,7 @@ const KIND_LABEL: Record<AlertKind, string> = {
   fah_inactive: "FAH inactive",
   fah_failed: "FAH failed",
   fah_errors: "FAH log errors",
+  fah_stuck: "FAH progress stuck",
 };
 
 function isDiscordWebhook(url: string): boolean {

@@ -178,6 +178,20 @@ export function getSnapshots(
     .all(hostname, limit) as SnapshotRow[];
 }
 
+export function getSnapshotsSince(
+  db: Database.Database,
+  hostname: string,
+  sinceIso: string,
+): SnapshotRow[] {
+  return db
+    .prepare(`
+      SELECT * FROM snapshots
+      WHERE hostname = ? AND created_at >= ?
+      ORDER BY created_at ASC
+    `)
+    .all(hostname, sinceIso) as SnapshotRow[];
+}
+
 export function pruneOldSnapshots(
   db: Database.Database,
   keepPerHost = 10080,

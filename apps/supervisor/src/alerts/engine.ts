@@ -1,5 +1,5 @@
 import type Database from "better-sqlite3";
-import { getLatestSnapshot, listMachines } from "../db.js";
+import { getLatestSnapshot, getSnapshotsSince, listMachines } from "../db.js";
 import {
   countAlertsByStatus,
   getAlert,
@@ -63,6 +63,10 @@ export function loadAlertConfig(env: NodeJS.ProcessEnv): AlertConfig {
     webhookUrl,
     offlineThresholdMs: Number(env.OFFLINE_THRESHOLD_MS ?? "120000"),
     cpuTempAlertC: Number(env.CPU_TEMP_ALERT_C ?? "85"),
+    stuckProgressHours: Math.max(
+      0,
+      Number(env.ALERT_STUCK_HOURS ?? "4"),
+    ),
     dashboardUrl: env.ALERT_DASHBOARD_URL?.trim() || null,
     discordUsername: env.ALERT_DISCORD_USERNAME?.trim() || "FoldOps",
   };
@@ -154,9 +158,20 @@ export async function runAlertEvaluation(
   const isOnline = (lastSeen: string) =>
     Date.now() - new Date(lastSeen).getTime() < config.offlineThresholdMs;
 
+  const stuckCutoffIso =
+    config.stuckProgressHours > 0
+      ? new Date(
+          Date.now() - config.stuckProgressHours * 3_600_000,
+        ).toISOString()
+      : "";
+
   const candidates = evaluateFarm(
     machines,
     (h) => getLatestSnapshot(db, h),
+    (h) =>
+      stuckCutoffIso
+        ? getSnapshotsSince(db, h, stuckCutoffIso)
+        : [],
     isOnline,
     (h) => wasOffline(db, h),
     config,

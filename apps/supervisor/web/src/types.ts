@@ -67,7 +67,8 @@ export type AlertKind =
   | "cpu_temp_high"
   | "fah_inactive"
   | "fah_failed"
-  | "fah_errors";
+  | "fah_errors"
+  | "fah_stuck";
 
 export interface ActiveAlert {
   id: string;

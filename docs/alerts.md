@@ -54,6 +54,7 @@ Non-Discord URLs (e.g. Slack) still get a plain-text batch message.
 | `fah-client` not active | warning |
 | `fah-client` failed | critical |
 | Recent FAH log errors | warning (re-fires if errors change) |
+| FAH progress stuck | warning (`ALERT_STUCK_HOURS`, default 4h; set `0` to disable) |
 
 ## API
 

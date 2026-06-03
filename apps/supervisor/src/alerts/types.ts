@@ -6,7 +6,8 @@ export type AlertKind =
   | "cpu_temp_high"
   | "fah_inactive"
   | "fah_failed"
-  | "fah_errors";
+  | "fah_errors"
+  | "fah_stuck";
 
 export interface AlertCandidate {
   id: string;
@@ -46,6 +47,7 @@ export interface AlertConfig {
   webhookUrl: string | null;
   offlineThresholdMs: number;
   cpuTempAlertC: number;
+  stuckProgressHours: number;
   dashboardUrl: string | null;
   discordUsername: string;
 }
