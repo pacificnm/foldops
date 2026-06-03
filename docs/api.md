@@ -110,6 +110,37 @@ Get a single machine by hostname.
 
 ---
 
+## GET /api/projects/:id
+
+Fetch public project metadata from [Folding@home’s API](https://api.foldingathome.org/project/:id). The supervisor proxies and caches responses for one hour (HTML descriptions are converted to plain text; large image fields are omitted).
+
+**Auth:** None.
+
+**Response:**
+
+```json
+{
+  "project": 18490,
+  "manager": "Prof. Vincent Voelz",
+  "cause": "cancer",
+  "institution": "Temple University",
+  "description": "…plain text summary…",
+  "projectRange": "18490-18495",
+  "modified": "2023-08-25 15:03:14",
+  "statsUrl": "https://stats.foldingathome.org/project/18490"
+}
+```
+
+**Errors:**
+
+| Status | Body |
+|--------|------|
+| `400` | `{ "error": "Invalid project id" }` |
+| `404` | `{ "error": "Project not found" }` |
+| `502` | `{ "error": "Failed to fetch project from Folding@home" }` |
+
+---
+
 ## GET /api/snapshots/:name
 
 Get snapshot history for a machine.

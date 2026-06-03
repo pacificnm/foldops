@@ -1,6 +1,7 @@
 import { Router, type Request, type Response, type NextFunction } from "express";
 import { ingestPayloadSchema, type IngestPayload } from "@foldops/shared";
 import type Database from "better-sqlite3";
+import { fetchFahProject } from "./fah-projects.js";
 import {
   getLatestSnapshot,
   getMachine,
@@ -122,6 +123,26 @@ export function createApiRouter(
       online: isOnline(machine.last_seen, config.offlineThresholdMs),
       latest: snapshotSummary(latest),
     });
+  });
+
+  router.get("/projects/:id", async (req, res) => {
+    const projectId = Number(req.params.id);
+    if (!Number.isInteger(projectId) || projectId <= 0) {
+      res.status(400).json({ error: "Invalid project id" });
+      return;
+    }
+
+    try {
+      const project = await fetchFahProject(projectId);
+      if (!project) {
+        res.status(404).json({ error: "Project not found" });
+        return;
+      }
+      res.json(project);
+    } catch (err) {
+      console.error("FAH project fetch error:", err);
+      res.status(502).json({ error: "Failed to fetch project from Folding@home" });
+    }
   });
 
   router.get("/snapshots/:name", (req, res) => {

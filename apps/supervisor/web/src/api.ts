@@ -1,4 +1,5 @@
 import type {
+  FahProjectInfo,
   MachineSummary,
   MachinesResponse,
   SnapshotsResponse,
@@ -33,4 +34,17 @@ export async function fetchSnapshots(
     throw new Error(`Failed to load history (${res.status})`);
   }
   return res.json() as Promise<SnapshotsResponse>;
+}
+
+export async function fetchFahProject(
+  projectId: string | number,
+): Promise<FahProjectInfo | null> {
+  const res = await fetch(
+    `/api/projects/${encodeURIComponent(String(projectId))}`,
+  );
+  if (res.status === 404) return null;
+  if (!res.ok) {
+    throw new Error(`Failed to load project (${res.status})`);
+  }
+  return res.json() as Promise<FahProjectInfo>;
 }

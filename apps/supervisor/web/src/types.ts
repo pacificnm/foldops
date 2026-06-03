@@ -36,6 +36,17 @@ export interface MachinesResponse {
   farm_ppd: number;
 }
 
+export interface FahProjectInfo {
+  project: number;
+  manager: string | null;
+  cause: string | null;
+  institution: string | null;
+  description: string | null;
+  projectRange: string | null;
+  modified: string | null;
+  statsUrl: string;
+}
+
 export interface SnapshotSummary {
   fah_status: string;
   project: string | null;

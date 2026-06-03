@@ -2,9 +2,10 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { HistoryChart } from "../components/HistoryChart";
 import { PageLayout } from "../components/PageLayout";
-import { fetchMachine, fetchSnapshots } from "../api";
+import { ProjectInfoPanel } from "../components/ProjectInfoPanel";
+import { fetchFahProject, fetchMachine, fetchSnapshots } from "../api";
 import { snapshotsToHistory } from "../history";
-import type { HistoryPoint, MachineSummary } from "../types";
+import type { FahProjectInfo, HistoryPoint, MachineSummary } from "../types";
 import {
   formatLastSeen,
   formatPpd,
@@ -26,6 +27,9 @@ export function MachineDetail() {
   const [limit, setLimit] = useState<number>(480);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [projectInfo, setProjectInfo] = useState<FahProjectInfo | null>(null);
+  const [projectLoading, setProjectLoading] = useState(false);
+  const [projectError, setProjectError] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!hostname) return;
@@ -52,6 +56,40 @@ export function MachineDetail() {
   }, [load]);
 
   const latest = machine?.latest;
+  const projectId = latest?.project ?? null;
+
+  useEffect(() => {
+    if (!projectId) {
+      setProjectInfo(null);
+      setProjectError(null);
+      setProjectLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setProjectLoading(true);
+    setProjectError(null);
+
+    fetchFahProject(projectId)
+      .then((info) => {
+        if (!cancelled) setProjectInfo(info);
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setProjectInfo(null);
+          setProjectError(
+            err instanceof Error ? err.message : "Failed to load project",
+          );
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setProjectLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
   const snapshotCount = history.length;
 
   const rangeLabel = useMemo(
@@ -112,6 +150,18 @@ export function MachineDetail() {
         <p className="message">Loading history…</p>
       )}
       {error && <p className="message error">{error}</p>}
+
+      {projectId && (
+        <ProjectInfoPanel
+          projectId={projectId}
+          run={latest?.run ?? null}
+          clone={latest?.clone ?? null}
+          gen={latest?.gen ?? null}
+          info={projectInfo}
+          loading={projectLoading}
+          error={projectError}
+        />
+      )}
 
       {!loading && history.length > 0 && (
         <>
