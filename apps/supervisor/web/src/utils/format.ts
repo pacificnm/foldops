@@ -20,6 +20,16 @@ export function formatTemp(celsius: number | null | undefined): string {
   return `${celsius.toFixed(1)}°C`;
 }
 
+/** CPU temperature band for kiosk / at-a-glance styling */
+export function cpuTempLevel(
+  celsius: number | null | undefined,
+): "unknown" | "ok" | "warn" | "hot" {
+  if (celsius == null) return "unknown";
+  if (celsius >= 85) return "hot";
+  if (celsius >= 70) return "warn";
+  return "ok";
+}
+
 export function formatPpd(ppd: number | null): string {
   if (ppd == null) return "—";
   if (ppd >= 1_000_000) return `${(ppd / 1_000_000).toFixed(2)}M`;

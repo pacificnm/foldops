@@ -93,13 +93,34 @@
 .kiosk-tile {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.45rem 0.5rem 0.4rem;
+  gap: 0.5rem;
+  padding: 0.55rem 0.6rem 0.5rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
   min-height: 0;
   overflow: hidden;
+}
+
+.kiosk-tile-link {
+  color: inherit;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    border-color 0.15s ease,
+    background 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.kiosk-tile-link:hover {
+  border-color: var(--accent-dim);
+  background: color-mix(in srgb, var(--accent) 6%, var(--surface));
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.kiosk-tile-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 .kiosk-tile--offline {
@@ -113,6 +134,7 @@
   justify-content: space-between;
   gap: 0.35rem;
   flex-shrink: 0;
+  margin-bottom: 0.1rem;
 }
 
 .kiosk-tile-name {
@@ -145,11 +167,17 @@
 .kiosk-stats {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.2rem 0.45rem;
+  gap: 0.55rem 0.85rem;
   margin: 0;
   flex: 1;
   min-height: 0;
   align-content: start;
+}
+
+.kiosk-stats > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.22rem;
 }
 
 .kiosk-stats dt {
@@ -160,17 +188,38 @@
 }
 
 .kiosk-stats dd {
-  margin: 0.05rem 0 0;
-  font-size: 0.72rem;
-  line-height: 1.2;
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.25;
 }
 
 .kiosk-stats-wide {
   grid-column: 1 / -1;
 }
 
+.kiosk-cpu-temp {
+  font-weight: 600;
+}
+
+.kiosk-cpu-temp--ok {
+  color: var(--ok);
+}
+
+.kiosk-cpu-temp--warn {
+  color: var(--warn);
+}
+
+.kiosk-cpu-temp--hot {
+  color: var(--danger);
+}
+
+.kiosk-cpu-temp--unknown {
+  color: var(--muted);
+  font-weight: 500;
+}
+
 .kiosk-tile-progress-bar {
-  margin-top: 0.15rem;
+  margin-top: 0.35rem;
   flex-shrink: 0;
 }
 
@@ -211,8 +260,16 @@
   }
 
   .kiosk-tile {
-    padding: 0.35rem 0.4rem;
-    gap: 0.18rem;
+    padding: 0.4rem 0.45rem;
+    gap: 0.35rem;
+  }
+
+  .kiosk-stats {
+    gap: 0.4rem 0.65rem;
+  }
+
+  .kiosk-stats > div {
+    gap: 0.15rem;
   }
 
   .kiosk-stats dt {
@@ -220,6 +277,6 @@
   }
 
   .kiosk-stats dd {
-    font-size: 0.66rem;
+    font-size: 0.7rem;
   }
 }

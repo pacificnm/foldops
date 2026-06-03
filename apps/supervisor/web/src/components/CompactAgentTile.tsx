@@ -1,5 +1,6 @@
+import { Link } from "react-router-dom";
 import type { MachineSummary } from "../types";
-import { formatTemp, formatUptime } from "../utils/format";
+import { cpuTempLevel, formatTemp, formatUptime } from "../utils/format";
 
 function statusLabel(machine: MachineSummary): string {
   if (!machine.online) return "offline";
@@ -21,8 +22,9 @@ export function CompactAgentTile({ machine }: { machine: MachineSummary }) {
   const status = statusLabel(machine);
 
   return (
-    <article
-      className={`kiosk-tile ${machine.online ? "kiosk-tile--online" : "kiosk-tile--offline"}`}
+    <Link
+      to={`/machine/${encodeURIComponent(machine.hostname)}`}
+      className={`kiosk-tile kiosk-tile-link ${machine.online ? "kiosk-tile--online" : "kiosk-tile--offline"}`}
     >
       <header className="kiosk-tile-head">
         <h2 className="kiosk-tile-name">{machine.hostname}</h2>
@@ -46,7 +48,9 @@ export function CompactAgentTile({ machine }: { machine: MachineSummary }) {
         </div>
         <div>
           <dt>CPU temp</dt>
-          <dd className="mono">{formatTemp(cpuTemp)}</dd>
+          <dd className={`mono kiosk-cpu-temp kiosk-cpu-temp--${cpuTempLevel(cpuTemp)}`}>
+            {formatTemp(cpuTemp)}
+          </dd>
         </div>
         <div>
           <dt>Chassis</dt>
@@ -72,6 +76,6 @@ export function CompactAgentTile({ machine }: { machine: MachineSummary }) {
           />
         </div>
       )}
-    </article>
+    </Link>
   );
 }
