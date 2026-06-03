@@ -182,6 +182,29 @@ done
 
 `build:agent` compiles `packages/shared` then `apps/agent` → `apps/agent/dist/`.
 
+### Push updates from the supervisor (dashboard)
+
+After agents run from a **git clone** at `/opt/foldops`, the supervisor can push updates without SSH:
+
+1. On **each agent** (`/etc/foldops/agent.env`):
+
+   ```env
+   UPDATE_ENABLED=true
+   AGENT_HTTP_PORT=9100
+   FOLDOPS_ROOT=/opt/foldops
+   ```
+
+2. On the **supervisor**:
+
+   ```env
+   DEPLOY_ENABLED=true
+   AGENT_HTTP_PORT=9100
+   ```
+
+3. Rebuild and restart supervisor + agents once manually, then use **Dashboard → Deploy agents** (`/deploy`).
+
+Each run executes `scripts/update-agent.sh` (`git pull --ff-only`, `npm install`, `npm run build:agent`) and restarts `foldops-agent`. Offline nodes are skipped. Supervisor UI is not updated by this flow — update the supervisor host separately.
+
 ### 2. Supervisor on fah-01
 
 Create the service user and data directory:

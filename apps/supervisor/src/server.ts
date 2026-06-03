@@ -8,6 +8,7 @@ import {
   loadAlertConfig,
   runAlertEvaluation,
 } from "./alerts/engine.js";
+import { initDeployTables } from "./deploy-db.js";
 import { initDb } from "./db.js";
 import { createApiRouter } from "./routes.js";
 
@@ -19,6 +20,9 @@ const DB_PATH = process.env.DB_PATH ?? "./data/foldops.db";
 const INGEST_TOKEN = process.env.INGEST_TOKEN;
 const OFFLINE_THRESHOLD_MS = Number(process.env.OFFLINE_THRESHOLD_MS ?? "120000");
 const AGENT_HTTP_PORT = Number(process.env.AGENT_HTTP_PORT ?? "9100");
+const DEPLOY_ENABLED =
+  process.env.DEPLOY_ENABLED === "1" ||
+  process.env.DEPLOY_ENABLED === "true";
 
 if (!INGEST_TOKEN) {
   console.error("INGEST_TOKEN is required");
@@ -26,6 +30,7 @@ if (!INGEST_TOKEN) {
 }
 
 const db = initDb(DB_PATH);
+initDeployTables(db);
 const alertConfig = loadAlertConfig(process.env);
 initAlerts(db);
 
@@ -45,6 +50,7 @@ app.use(
     ingestToken: INGEST_TOKEN,
     offlineThresholdMs: OFFLINE_THRESHOLD_MS,
     agentHttpPort: AGENT_HTTP_PORT,
+    deployEnabled: DEPLOY_ENABLED,
     afterIngest: runAlerts,
     listAlerts: () => {
       const alerts = listActiveAlertsPublic(db);
@@ -76,5 +82,8 @@ app.listen(PORT, HOST, () => {
     console.log(
       `[alerts] enabled (webhook: ${alertConfig.webhookUrl ? "yes" : "console only"})`,
     );
+  }
+  if (DEPLOY_ENABLED) {
+    console.log(`[deploy] agent push enabled (port ${AGENT_HTTP_PORT})`);
   }
 });

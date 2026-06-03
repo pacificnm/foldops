@@ -186,6 +186,58 @@ Snapshots are ordered newest first.
 
 ---
 
+## GET /api/deploy/runs
+
+List recent agent deploy runs (newest first).
+
+**Auth:** None (trusted LAN; requires `DEPLOY_ENABLED=true` to start runs).
+
+**Response:**
+
+```json
+{
+  "runs": [
+    {
+      "id": "uuid",
+      "created_at": "2026-06-01T12:00:00.000Z",
+      "status": "completed",
+      "hostnames": ["fah-02", "fah-03"],
+      "results": { }
+    }
+  ]
+}
+```
+
+---
+
+## GET /api/deploy/runs/:id
+
+Get one deploy run with per-host results and log output.
+
+---
+
+## POST /api/deploy/agents
+
+Push an agent update to farm nodes (`git pull`, `npm install`, `build:agent`, restart `foldops-agent`).
+
+**Auth:** None (enable with `DEPLOY_ENABLED=true` on the supervisor).
+
+**Request body (optional):**
+
+```json
+{
+  "hostnames": ["fah-02", "fah-03"]
+}
+```
+
+Omit `hostnames` to update all known machines.
+
+**Response:** `202` with `{ "run_id": "uuid", "status": "running" }`. Poll `GET /api/deploy/runs/:id` for progress.
+
+**Requirements:** Each target must be online, reachable on `AGENT_HTTP_PORT`, and have `UPDATE_ENABLED=true` with a git checkout at `FOLDOPS_ROOT` (default `/opt/foldops`).
+
+---
+
 ## Static frontend
 
 In production, the supervisor serves the built React app from `apps/supervisor/web/dist`. Non-API GET requests receive `index.html` for client-side routing.

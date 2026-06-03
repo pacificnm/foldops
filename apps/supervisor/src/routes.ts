@@ -2,6 +2,8 @@ import { Router, type Request, type Response, type NextFunction } from "express"
 import { ingestPayloadSchema, type IngestPayload } from "@foldops/shared";
 import type Database from "better-sqlite3";
 import { fetchLiveAgentLogs, type LogSource } from "./agent-logs.js";
+import { startAgentDeploy } from "./deploy.js";
+import { getDeployRun, listDeployRuns } from "./deploy-db.js";
 import { fetchFahProject } from "./fah-projects.js";
 import {
   getLatestSnapshot,
@@ -16,6 +18,7 @@ export interface AppConfig {
   ingestToken: string;
   offlineThresholdMs: number;
   agentHttpPort: number;
+  deployEnabled: boolean;
   afterIngest?: () => void;
   listAlerts?: () => { alerts: unknown[]; count: number };
 }
@@ -203,6 +206,49 @@ export function createApiRouter(
       online: isOnline(machine.last_seen, config.offlineThresholdMs),
       latest: snapshotSummary(latest),
     });
+  });
+
+  router.get("/deploy/runs", (_req, res) => {
+    res.json({ runs: listDeployRuns(db, 25) });
+  });
+
+  router.get("/deploy/runs/:id", (req, res) => {
+    const run = getDeployRun(db, req.params.id);
+    if (!run) {
+      res.status(404).json({ error: "Deploy run not found" });
+      return;
+    }
+    res.json(run);
+  });
+
+  router.post("/deploy/agents", (req, res) => {
+    if (!config.deployEnabled) {
+      res.status(403).json({ error: "Deploy is disabled (set DEPLOY_ENABLED=true)" });
+      return;
+    }
+
+    const body = (req.body ?? {}) as { hostnames?: string[] };
+    const hostnames = Array.isArray(body.hostnames)
+      ? body.hostnames.filter((h) => typeof h === "string" && h.length > 0)
+      : undefined;
+
+    const result = startAgentDeploy(
+      db,
+      {
+        enabled: config.deployEnabled,
+        agentHttpPort: config.agentHttpPort,
+        ingestToken: config.ingestToken,
+        offlineThresholdMs: config.offlineThresholdMs,
+      },
+      hostnames,
+    );
+
+    if ("error" in result) {
+      res.status(400).json({ error: result.error });
+      return;
+    }
+
+    res.status(202).json({ run_id: result.runId, status: "running" });
   });
 
   router.get("/alerts", (_req, res) => {

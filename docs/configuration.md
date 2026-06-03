@@ -35,6 +35,7 @@ Never commit `.env` files or `/etc/foldops/*.env` to version control.
 | `ALERTS_ENABLED` | auto | No | Set `true` or `1` to enable evaluation; defaults on when `ALERT_WEBHOOK_URL` is set |
 | `CPU_TEMP_ALERT_C` | `85` | No | Fire a warning when CPU temperature (°C) is at or above this value |
 | `AGENT_HTTP_PORT` | `9100` | No | TCP port for live log pull from agents (`0` = cached logs only) |
+| `DEPLOY_ENABLED` | off | No | Set `true` to enable `POST /api/deploy/agents` from the dashboard |
 
 When alerts are enabled, the supervisor evaluates farm state every 60 seconds and after each agent ingest. Active issues are stored in SQLite and exposed at `GET /api/alerts` for the kiosk and dashboard banners.
 
@@ -76,6 +77,9 @@ CPU_TEMP_ALERT_C=85
 | `FAH_LOG_PATH` | `/var/log/fah-client/log.txt` | No | Path to the FAH client log file |
 | `FAH_DB_PATH` | `/var/lib/fah-client/client.db` | No | FAH v8 SQLite DB (progress, PPD, project) |
 | `AGENT_HTTP_PORT` | `9100` | No | HTTP port for supervisor log pull (`0` to disable) |
+| `UPDATE_ENABLED` | off | No | Allow supervisor to run `scripts/update-agent.sh` via `POST /update` |
+| `FOLDOPS_ROOT` | `/opt/foldops` | No | Git checkout root on the node |
+| `UPDATE_SCRIPT` | `$FOLDOPS_ROOT/scripts/update-agent.sh` | No | Update script path |
 
 ### Example (production)
 

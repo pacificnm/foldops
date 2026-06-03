@@ -7,7 +7,7 @@ interface PageLayoutProps {
   badge?: ReactNode;
   headerAside?: ReactNode;
   backLink?: { href: string; label: string };
-  footer?: string;
+  footer?: ReactNode;
   children: ReactNode;
 }
 

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { AlertBanner } from "../components/AlertBanner";
 import { MachineCard } from "../components/MachineCard";
 import { PageLayout } from "../components/PageLayout";
@@ -41,7 +42,12 @@ export function Dashboard() {
       eyebrow="Folding@home Farm"
       title="FoldOps"
       backLink={{ href: "/", label: "← Kiosk view" }}
-      footer="Auto-refresh every 30s · offline after 2m without heartbeat"
+      footer={
+        <>
+          Auto-refresh every 30s ·{" "}
+          <Link to="/deploy">Deploy agents →</Link>
+        </>
+      }
       headerAside={
         <div className="hero-stats">
           <div className="hero-stat">

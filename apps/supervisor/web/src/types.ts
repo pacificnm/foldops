@@ -83,6 +83,40 @@ export interface AlertsResponse {
   count: number;
 }
 
+export type DeployRunStatus = "running" | "completed" | "failed";
+
+export type DeployHostStatus =
+  | "pending"
+  | "running"
+  | "success"
+  | "failed"
+  | "offline"
+  | "skipped";
+
+export interface DeployHostResult {
+  hostname: string;
+  status: DeployHostStatus;
+  exit_code: number | null;
+  message: string;
+  stdout: string;
+  stderr: string;
+  duration_ms: number | null;
+  started_at: string | null;
+  finished_at: string | null;
+}
+
+export interface DeployRun {
+  id: string;
+  created_at: string;
+  status: DeployRunStatus;
+  hostnames: string[];
+  results: Record<string, DeployHostResult>;
+}
+
+export interface DeployRunsResponse {
+  runs: DeployRun[];
+}
+
 export interface FahProjectInfo {
   project: number;
   manager: string | null;

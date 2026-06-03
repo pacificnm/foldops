@@ -4,6 +4,8 @@ import {
 } from "./fahProject";
 import type {
   AlertsResponse,
+  DeployRun,
+  DeployRunsResponse,
   FahProjectInfo,
   LogSource,
   MachineLogsResponse,
@@ -13,6 +15,44 @@ import type {
 } from "./types";
 
 const FAH_PROJECT_API = "https://api.foldingathome.org/project";
+
+export async function fetchDeployRuns(): Promise<DeployRunsResponse> {
+  const res = await fetch("/api/deploy/runs");
+  if (!res.ok) {
+    throw new Error(`Failed to load deploy history (${res.status})`);
+  }
+  return res.json() as Promise<DeployRunsResponse>;
+}
+
+export async function fetchDeployRun(id: string): Promise<DeployRun> {
+  const res = await fetch(`/api/deploy/runs/${encodeURIComponent(id)}`);
+  if (!res.ok) {
+    throw new Error(`Failed to load deploy run (${res.status})`);
+  }
+  return res.json() as Promise<DeployRun>;
+}
+
+export async function startAgentDeploy(
+  hostnames?: string[],
+): Promise<{ run_id: string; status: string }> {
+  const res = await fetch("/api/deploy/agents", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(hostnames?.length ? { hostnames } : {}),
+  });
+  const body = (await res.json().catch(() => ({}))) as {
+    error?: string;
+    run_id?: string;
+    status?: string;
+  };
+  if (!res.ok) {
+    throw new Error(body.error ?? `Deploy failed (${res.status})`);
+  }
+  if (!body.run_id) {
+    throw new Error("Deploy started but no run id returned");
+  }
+  return { run_id: body.run_id, status: body.status ?? "running" };
+}
 
 export async function fetchAlerts(): Promise<AlertsResponse> {
   const res = await fetch("/api/alerts");

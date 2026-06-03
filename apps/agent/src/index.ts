@@ -12,6 +12,12 @@ const FAH_DB_PATH =
 const FAH_WORK_DIR =
   process.env.FAH_WORK_DIR ?? "/var/lib/fah-client/work";
 const AGENT_HTTP_PORT = Number(process.env.AGENT_HTTP_PORT ?? "9100");
+const FOLDOPS_ROOT = process.env.FOLDOPS_ROOT ?? "/opt/foldops";
+const UPDATE_SCRIPT =
+  process.env.UPDATE_SCRIPT ?? `${FOLDOPS_ROOT}/scripts/update-agent.sh`;
+const UPDATE_ENABLED =
+  process.env.UPDATE_ENABLED === "1" ||
+  process.env.UPDATE_ENABLED === "true";
 
 if (!AGENT_TOKEN) {
   console.error("AGENT_TOKEN is required");
@@ -86,6 +92,9 @@ async function run(): Promise<void> {
     token: AGENT_TOKEN!,
     fahLogPath: FAH_LOG_PATH,
     fahWorkDir: FAH_WORK_DIR,
+    updateEnabled: UPDATE_ENABLED,
+    foldopsRoot: FOLDOPS_ROOT,
+    updateScript: UPDATE_SCRIPT,
   });
 
   await probeSupervisor();
