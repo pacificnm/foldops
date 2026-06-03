@@ -1,20 +1,26 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { AlertBanner } from "../components/AlertBanner";
 import { MachineCard } from "../components/MachineCard";
 import { PageLayout } from "../components/PageLayout";
-import { fetchMachines } from "../api";
+import { fetchAlerts, fetchMachines } from "../api";
 import { formatPpd } from "../utils/format";
-import type { MachinesResponse } from "../types";
+import type { ActiveAlert, MachinesResponse } from "../types";
 
 export function Dashboard() {
   const [data, setData] = useState<MachinesResponse | null>(null);
+  const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
-      const result = await fetchMachines();
+      const [result, alertResult] = await Promise.all([
+        fetchMachines(),
+        fetchAlerts(),
+      ]);
       setData(result);
+      setAlerts(alertResult.alerts);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -54,6 +60,7 @@ export function Dashboard() {
         </div>
       }
     >
+      <AlertBanner alerts={alerts} />
       {loading && !data && <p className="message">Loading farm status…</p>}
       {error && <p className="message error">{error}</p>}
 

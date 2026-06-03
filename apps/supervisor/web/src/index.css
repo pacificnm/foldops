@@ -552,3 +552,56 @@ body {
 .project-panel-message--error {
   color: var(--danger);
 }
+
+.alert-banner {
+  margin: 0 0 1rem;
+  padding: 0.65rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.alert-banner--critical {
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--border));
+  background: color-mix(in srgb, var(--danger) 12%, var(--surface));
+}
+
+.alert-banner--warning {
+  border-color: color-mix(in srgb, var(--warn) 50%, var(--border));
+  background: color-mix(in srgb, var(--warn) 10%, var(--surface));
+}
+
+.alert-banner-title {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+.alert-banner-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.alert-banner-item {
+  margin: 0;
+  padding: 0.15rem 0;
+  font-size: 0.88rem;
+  line-height: 1.35;
+}
+
+.alert-banner-item--critical {
+  color: var(--danger);
+}
+
+.alert-banner-item--warning {
+  color: var(--warn);
+}
+
+.alert-banner-item--more {
+  color: var(--muted);
+  font-size: 0.8rem;
+}

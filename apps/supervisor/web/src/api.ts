@@ -3,6 +3,7 @@ import {
   normalizeFahProject,
 } from "./fahProject";
 import type {
+  AlertsResponse,
   FahProjectInfo,
   MachineSummary,
   MachinesResponse,
@@ -10,6 +11,14 @@ import type {
 } from "./types";
 
 const FAH_PROJECT_API = "https://api.foldingathome.org/project";
+
+export async function fetchAlerts(): Promise<AlertsResponse> {
+  const res = await fetch("/api/alerts");
+  if (!res.ok) {
+    throw new Error(`Failed to load alerts (${res.status})`);
+  }
+  return res.json() as Promise<AlertsResponse>;
+}
 
 export async function fetchMachines(): Promise<MachinesResponse> {
   const res = await fetch("/api/machines");

@@ -36,6 +36,32 @@ export interface MachinesResponse {
   farm_ppd: number;
 }
 
+export type AlertSeverity = "info" | "warning" | "critical";
+
+export type AlertKind =
+  | "node_offline"
+  | "node_online"
+  | "cpu_temp_high"
+  | "fah_inactive"
+  | "fah_failed"
+  | "fah_errors";
+
+export interface ActiveAlert {
+  id: string;
+  hostname: string;
+  kind: AlertKind;
+  severity: AlertSeverity;
+  message: string;
+  active: boolean;
+  since: string;
+  resolved_at: string | null;
+}
+
+export interface AlertsResponse {
+  alerts: ActiveAlert[];
+  count: number;
+}
+
 export interface FahProjectInfo {
   project: number;
   manager: string | null;

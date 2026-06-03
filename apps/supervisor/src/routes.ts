@@ -14,6 +14,8 @@ import {
 export interface AppConfig {
   ingestToken: string;
   offlineThresholdMs: number;
+  afterIngest?: () => void;
+  listAlerts?: () => { alerts: unknown[]; count: number };
 }
 
 function parsePayload(row: SnapshotRow): IngestPayload {
@@ -80,6 +82,7 @@ export function createApiRouter(
 
     try {
       ingestSnapshot(db, parsed.data);
+      config.afterIngest?.();
       res.json({ ok: true, hostname: parsed.data.hostname });
     } catch (err) {
       console.error("Ingest error:", err);
@@ -123,6 +126,14 @@ export function createApiRouter(
       online: isOnline(machine.last_seen, config.offlineThresholdMs),
       latest: snapshotSummary(latest),
     });
+  });
+
+  router.get("/alerts", (_req, res) => {
+    if (!config.listAlerts) {
+      res.json({ alerts: [], count: 0 });
+      return;
+    }
+    res.json(config.listAlerts());
   });
 
   router.get("/projects/:id", async (req, res) => {

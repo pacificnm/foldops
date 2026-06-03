@@ -2,6 +2,12 @@ import "dotenv/config";
 import express from "express";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import {
+  initAlerts,
+  listActiveAlertsPublic,
+  loadAlertConfig,
+  runAlertEvaluation,
+} from "./alerts/engine.js";
 import { initDb } from "./db.js";
 import { createApiRouter } from "./routes.js";
 
@@ -19,6 +25,15 @@ if (!INGEST_TOKEN) {
 }
 
 const db = initDb(DB_PATH);
+const alertConfig = loadAlertConfig(process.env);
+initAlerts(db);
+
+const runAlerts = () => {
+  runAlertEvaluation(db, alertConfig).catch((err) => {
+    console.error("[alerts] evaluation failed:", err);
+  });
+};
+
 const app = express();
 
 app.use(express.json({ limit: "1mb" }));
@@ -28,6 +43,11 @@ app.use(
   createApiRouter(db, {
     ingestToken: INGEST_TOKEN,
     offlineThresholdMs: OFFLINE_THRESHOLD_MS,
+    afterIngest: runAlerts,
+    listAlerts: () => {
+      const alerts = listActiveAlertsPublic(db);
+      return { alerts, count: alerts.length };
+    },
   }),
 );
 
@@ -44,7 +64,15 @@ app.use((req, res, next) => {
   });
 });
 
+setInterval(runAlerts, 60_000);
+runAlerts();
+
 app.listen(PORT, HOST, () => {
   console.log(`FoldOps supervisor listening on http://${HOST}:${PORT}`);
   console.log(`Database: ${DB_PATH}`);
+  if (alertConfig.enabled) {
+    console.log(
+      `[alerts] enabled (webhook: ${alertConfig.webhookUrl ? "yes" : "console only"})`,
+    );
+  }
 });

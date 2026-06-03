@@ -116,7 +116,8 @@ npm run build
 
 | Command | Output |
 |---------|--------|
-| `build:agent` | `apps/agent/dist/` |
+| `build:agent` | `apps/agent/dist/` (run on every fah-01..fah-04) |
+| `./scripts/build-agent.sh` | Same as `build:agent` with `npm install` |
 | `build:supervisor` | `apps/supervisor/dist/` + `apps/supervisor/web/dist/` |
 
 ---
@@ -137,9 +138,30 @@ npm run build:supervisor
 
 Or use the helper script: `./scripts/build-supervisor.sh`
 
-### 1b. Deploy code to each agent host (fah-01..fah-04)
+### 1b. Build agent on each FAH node (fah-01..fah-04)
 
-Same tree on every node (or rsync only `apps/agent`, `packages/shared`, and root `package.json` / lockfile):
+Run on **each** worker (as root). Same steps everywhere; only `/etc/foldops/agent.env` differs per host (e.g. `SUPERVISOR_URL`).
+
+**After `git pull` or rsync new code:**
+
+```bash
+cd /opt/foldops
+git pull                    # if using git on the node
+npm install
+npm run build:agent
+systemctl restart foldops-agent
+journalctl -u foldops-agent -n 3 --no-pager
+```
+
+Or use the helper script:
+
+```bash
+cd /opt/foldops
+./scripts/build-agent.sh
+systemctl restart foldops-agent
+```
+
+**First-time deploy** (copy repo to the node, then build):
 
 ```bash
 mkdir -p /opt/foldops
@@ -148,6 +170,17 @@ cd /opt/foldops
 npm install
 npm run build:agent
 ```
+
+**One-liner per node** (from your dev machine, if you SSH as root):
+
+```bash
+for h in fah-01 fah-02 fah-03 fah-04; do
+  echo "=== $h ==="
+  ssh root@$h 'cd /opt/foldops && git pull && npm install && npm run build:agent && systemctl restart foldops-agent'
+done
+```
+
+`build:agent` compiles `packages/shared` then `apps/agent` → `apps/agent/dist/`.
 
 ### 2. Supervisor on fah-01
 

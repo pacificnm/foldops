@@ -1,19 +1,25 @@
 import { useCallback, useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { AlertBanner } from "../components/AlertBanner";
 import { CompactAgentTile } from "../components/CompactAgentTile";
-import { fetchMachines } from "../api";
-import type { MachinesResponse } from "../types";
+import { fetchAlerts, fetchMachines } from "../api";
+import type { ActiveAlert, MachinesResponse } from "../types";
 import "../kiosk.css";
 
 export function KioskHome() {
   const [data, setData] = useState<MachinesResponse | null>(null);
+  const [alerts, setAlerts] = useState<ActiveAlert[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const load = useCallback(async () => {
     try {
-      const result = await fetchMachines();
+      const [result, alertResult] = await Promise.all([
+        fetchMachines(),
+        fetchAlerts(),
+      ]);
       setData(result);
+      setAlerts(alertResult.alerts);
       setError(null);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unknown error");
@@ -52,6 +58,7 @@ export function KioskHome() {
       </header>
 
       <main className="kiosk-main">
+        <AlertBanner alerts={alerts} className="kiosk-alert-banner" />
         {loading && !data && (
           <p className="kiosk-message">Loading…</p>
         )}

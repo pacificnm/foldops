@@ -280,3 +280,19 @@
     font-size: 0.7rem;
   }
 }
+
+.kiosk-alert-banner {
+  flex-shrink: 0;
+  margin-bottom: 0.4rem;
+  padding: 0.45rem 0.55rem;
+}
+
+.kiosk-alert-banner .alert-banner-title {
+  font-size: 0.62rem;
+  margin-bottom: 0.2rem;
+}
+
+.kiosk-alert-banner .alert-banner-item {
+  font-size: 0.72rem;
+  padding: 0.08rem 0;
+}
