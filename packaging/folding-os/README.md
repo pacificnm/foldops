@@ -108,12 +108,43 @@ FoldOps failure must not block boot or FAH folding (see folding-os `doc/foldops-
 
 ---
 
+## Apt repository (recommended for farms)
+
+Official signed repo: **https://deb.folding-os.com**
+
+Seed images with the keyring and source entry so nodes can install on first boot:
+
+```bash
+curl -fsSL https://deb.folding-os.com/foldops-archive-keyring.gpg \
+  | gpg --dearmor -o /usr/share/keyrings/foldops.gpg
+
+tee /etc/apt/sources.list.d/foldops.list <<'EOF'
+deb [signed-by=/usr/share/keyrings/foldops.gpg] https://deb.folding-os.com stable main
+EOF
+```
+
+| Profile | `apt install` |
+|---------|----------------|
+| FAH worker | `foldops-agent` |
+| Supervisor | `foldops-agent foldops-supervisor` |
+
+Configure `/etc/foldops/*.env` from package examples before `systemctl enable`. See [docs/installation.md](../../docs/installation.md#production-deployment-apt) and [`packaging/deb/README.md`](../deb/README.md).
+
+---
+
 ## Updates
 
 Folding-OS appliances do **not** use `scripts/update-agent.sh`.
 
-**Preferred for FoldOps-only updates:** Debian packages + apt (see [`packaging/deb/README.md`](../deb/README.md)). Publish `target/debian/*.deb` to an apt repo on the image; nodes run `apt upgrade` without an OS reflash.
+**Preferred for FoldOps-only updates:**
 
-Buildroot compile-from-source (above) is still valid for **initial image** seeding; ongoing FoldOps releases should use `.deb` packages.
+```bash
+apt update
+apt install --only-upgrade foldops-agent foldops-supervisor foldops-web
+```
+
+Maintainers publish with `npm run build:debs`, `npm run build:apt-repo:signed`, `npm run sync:apt-repo:r2`.
+
+Buildroot compile-from-source (above) is still valid for **initial image** seeding; ongoing FoldOps releases should use the apt repo.
 
 The supervisor **Deploy** UI (`POST /api/deploy/agents`) remains for legacy Debian git-checkout farms only.

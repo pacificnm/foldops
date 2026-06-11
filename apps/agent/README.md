@@ -4,7 +4,24 @@ Collects system, FAH, and maintenance metrics every 60 seconds and POSTs them to
 
 Runs on each FAH worker node (`fah-01` through `fah-04`).
 
-## Prerequisites
+## Production (apt)
+
+Farm nodes use the **Rust** agent from the official apt repo — not this Node package:
+
+```bash
+sudo apt install foldops-agent
+sudo cp /etc/foldops/agent.env.example /etc/foldops/agent.env
+# edit SUPERVISOR_URL and AGENT_TOKEN
+sudo systemctl enable --now foldops-agent
+```
+
+Repository: `deb [signed-by=/usr/share/keyrings/foldops.gpg] https://deb.folding-os.com stable main`
+
+Full setup: [docs/installation.md](../../docs/installation.md#production-deployment-apt).
+
+---
+
+## Prerequisites (legacy Node agent / development)
 
 - Node.js 22+ (see repo `.nvmrc`)
 - `fah-client` installed and running
@@ -83,7 +100,9 @@ Reading `client.db` requires permission. If you see `permission denied` warnings
 npm run dev -w @foldops/agent
 ```
 
-## Production
+## Production (legacy git checkout)
+
+Prefer [apt install](../../docs/installation.md#production-deployment-apt) on farm nodes. The steps below are for hosts with a git clone at `/opt/foldops`.
 
 ### Build on the node (or build elsewhere and copy `dist/`)
 

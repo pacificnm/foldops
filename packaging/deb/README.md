@@ -2,13 +2,61 @@
 
 Install and upgrade FoldOps on Folding-OS (or any Debian-based node) **without reflashing the OS image**.
 
-```bash
-sudo apt update
-sudo apt install foldops-agent              # every FAH node
-sudo apt install foldops-supervisor         # supervisor node (pulls in foldops-web)
-```
+Official apt repository: **https://deb.folding-os.com**
+
+---
+
+## Farm nodes — install and configure
+
+### 1. Enable the repository
 
 ```bash
+curl -fsSL https://deb.folding-os.com/foldops-archive-keyring.gpg \
+  | sudo gpg --dearmor -o /usr/share/keyrings/foldops.gpg
+
+sudo tee /etc/apt/sources.list.d/foldops.list <<'EOF'
+deb [signed-by=/usr/share/keyrings/foldops.gpg] https://deb.folding-os.com stable main
+EOF
+
+sudo apt update
+```
+
+### 2. Install packages
+
+```bash
+# Every FAH node
+sudo apt install foldops-agent
+
+# Supervisor node (fah-01) — pulls in foldops-web
+sudo apt install foldops-supervisor
+```
+
+### 3. Configure and start
+
+Packages ship env **templates** only — services are not auto-enabled.
+
+```bash
+sudo cp /etc/foldops/agent.env.example /etc/foldops/agent.env
+# edit SUPERVISOR_URL and AGENT_TOKEN (must match supervisor INGEST_TOKEN)
+sudo chmod 600 /etc/foldops/agent.env
+sudo systemctl enable --now foldops-agent
+```
+
+On the supervisor host:
+
+```bash
+sudo cp /etc/foldops/supervisor.env.example /etc/foldops/supervisor.env
+# edit INGEST_TOKEN; WEB_ROOT=/usr/share/foldops/web is set in the example
+sudo chmod 600 /etc/foldops/supervisor.env
+sudo systemctl enable --now foldops-supervisor
+```
+
+Full variable reference: [docs/configuration.md](../../docs/configuration.md). Step-by-step farm setup: [docs/installation.md](../../docs/installation.md#production-deployment-apt).
+
+### 4. Upgrade
+
+```bash
+sudo apt update
 sudo apt install --only-upgrade foldops-agent foldops-supervisor foldops-web
 ```
 
@@ -18,24 +66,16 @@ sudo apt install --only-upgrade foldops-agent foldops-supervisor foldops-web
 
 | Package | Architecture | Contents |
 |---------|--------------|----------|
-| `foldops-agent` | `amd64` | Agent binary, systemd unit, `/etc/foldops/agent.env.example` |
+| `foldops-agent` | `amd64` | Rust agent binary, systemd unit, `/etc/foldops/agent.env.example` |
 | `foldops-web` | `all` | React dashboard at `/usr/share/foldops/web/` |
-| `foldops-supervisor` | `amd64` | Supervisor binary, systemd unit, sysusers/tmpfiles, env example; **depends on `foldops-web` same version** |
-
-Services are **not** auto-enabled on install. Copy env examples and enable after configuration:
-
-```bash
-sudo cp /etc/foldops/agent.env.example /etc/foldops/agent.env
-# edit tokens/URLs
-sudo systemctl enable --now foldops-agent
-```
+| `foldops-supervisor` | `amd64` | Rust supervisor binary, systemd unit, sysusers/tmpfiles, env example; **depends on `foldops-web` same version** |
 
 ---
 
 ## Build (foldops repo)
 
 ```bash
-./scripts/build-debs.sh
+npm run build:debs
 # → target/debian/foldops-{agent,supervisor}_*_amd64.deb
 # → target/debian/foldops-web_*_all.deb
 ```
@@ -46,88 +86,101 @@ CI attaches `.deb` files to GitHub Releases on `v*` tags.
 
 ---
 
-## Apt repository on Folding-OS
+## Apt repository layout
 
-Bake a local repo into the image so nodes can `apt upgrade` FoldOps independently of OS updates.
+Only these paths are public on R2 / `deb.folding-os.com`:
 
-### 1. Publish debs (foldops CI)
-
-Release tag `v0.1.0` produces:
-
-- `foldops-agent_0.1.0-1_amd64.deb`
-- `foldops-supervisor_0.1.0-1_amd64.deb`
-- `foldops-web_0.1.0_all.deb`
-
-### 2. Create repo
-
-```bash
-npm run build:debs
-./scripts/build-apt-repo.sh
-# → packaging/apt-repo/{pool,dists}/...
+```text
+dists/stable/
+  InRelease
+  Release
+  Release.gpg
+  main/binary-amd64/Packages.gz
+pool/main/
+  f/foldops-agent/foldops-agent_0.1.0-1_amd64.deb
+  f/foldops-supervisor/foldops-supervisor_0.1.0-1_amd64.deb
+  f/foldops-web/foldops-web_0.1.0_all.deb
+foldops-archive-keyring.gpg
 ```
 
-### 3. Host on Cloudflare R2 (recommended for remote farms)
+Build-time only (do **not** upload): `conf/`, `db/`
 
-R2 is S3-compatible static hosting. apt needs the **repository layout** (`dists/`, `pool/`), not raw `.deb` URLs.
+---
 
-1. **Build and upload**
+## Signing key
 
-   ```bash
-   npm run build:debs
-   npm run build:apt-repo
-   R2_BUCKET=foldops-apt ./scripts/upload-apt-repo-r2.sh
-   ```
+Official repo public key: [`foldops-archive-keyring.gpg`](foldops-archive-keyring.gpg) (same as repo root `gpg.key`).
 
-   Configure `rclone` with a Cloudflare R2 remote (see `scripts/upload-apt-repo-r2.sh`).
+| | |
+|--|--|
+| Key id | `8BC95492` |
+| Fingerprint | `42E02FBEF6C5B7E8983D4EEECC57F8008BC95492` |
+| Identity | FoldingOS Package Signing `<security@folding-os.com>` |
 
-2. **Public HTTPS URL**
+- **Public key** — committed in `packaging/deb/foldops-archive-keyring.gpg` (farm nodes + R2).
+- **Secret key** — must be in your local gpg keyring to sign; **never** commit private keys.
 
-   - R2 → bucket → **Settings** → connect a **custom domain** (e.g. `apt.yourdomain.com`), or
-   - Enable public access on the bucket prefix (less ideal; custom domain is better for apt).
+---
 
-3. **Farm node** — `/etc/apt/sources.list.d/foldops.list`
+## Publish to deb.folding-os.com (maintainers)
 
-   ```text
-   deb [trusted=yes] https://apt.yourdomain.com stable main
-   ```
+### Build signed repo
 
-   ```bash
-   sudo apt update
-   sudo apt install foldops-agent
-   sudo apt install --only-upgrade foldops-agent foldops-supervisor foldops-web
-   ```
+```bash
+sudo apt install reprepro gnupg
 
-   `[trusted=yes]` skips GPG verification — fine for a private bucket you control. For production, sign the repo with `reprepro` and use `[signed-by=...]`.
+# secret key must already be imported
+gpg --list-secret-keys 8BC95492
 
-4. **Publish flow after each release**
+npm run build:debs
+npm run build:apt-repo:signed
+# uses key 8BC95492 by default; override with APT_SIGNING_KEY=...
+```
 
-   ```bash
-   npm run build:debs
-   npm run build:apt-repo
-   R2_BUCKET=foldops-apt ./scripts/upload-apt-repo-r2.sh
-   ```
+### Upload to Cloudflare R2
 
-   Nodes pick up new versions on `apt update` (no OS reflash).
+Configure `rclone` with an R2 remote named `r2` (see `scripts/upload-apt-repo-r2.sh`).
 
-**Note:** apt cannot `install https://bucket.../foldops-agent.deb` directly for upgrades with dependencies — it needs the `Packages` index under `dists/`.
+```bash
+npm run sync:apt-repo:r2
+# defaults R2_BUCKET=foldops-apt; override with R2_BUCKET=other npm run sync:apt-repo:r2
+```
 
-### 4. Local / image-embedded mirror
+Upload order: `pool/` → package indices → `Release` / `InRelease` last, so apt never sees mismatched metadata mid-sync.
+
+### After upload
+
+1. Purge Cloudflare cache for `https://deb.folding-os.com/dists/` (apt errors “mirror sync in progress” when CDN serves stale `Packages.gz`).
+2. On a test node: `sudo apt update && apt policy foldops-agent`.
+
+### Unsigned vs signed
+
+| Script | Tool | Signing | Use |
+|--------|------|---------|-----|
+| `build-apt-repo.sh` | apt-ftparchive | No | Quick local test, `[trusted=yes]` |
+| `build-apt-repo-signed.sh` | reprepro | Yes | **Production** / R2 |
+
+**Note:** apt cannot `install https://…/foldops-agent.deb` directly for upgrades with dependencies — it needs the `Packages` index under `dists/`.
+
+---
+
+## Image / local mirrors
+
+Bake the same `sources.list` into Folding-OS images, or use a local mirror:
 
 ```text
 # /etc/apt/sources.list.d/foldops.list
-deb [trusted=yes] file:/srv/apt/foldops stable main
-# or any HTTPS mirror:
-# deb [signed-by=/usr/share/keyrings/foldops.gpg] https://apt.example.com stable main
+deb [signed-by=/usr/share/keyrings/foldops.gpg] https://deb.folding-os.com stable main
+# embedded mirror:
+# deb [trusted=yes] file:/srv/apt/foldops stable main
 ```
-
-### 5. Image profiles (folding-os)
 
 | Profile | `apt install` |
 |---------|----------------|
 | FAH worker | `foldops-agent` |
 | Supervisor (fah-01) | `foldops-agent foldops-supervisor` |
 
-Pin versions in image build if needed:
+Pin versions at image build time if needed:
 
 ```bash
 apt install foldops-agent=0.1.0-1 foldops-supervisor=0.1.0-1
@@ -141,19 +194,18 @@ apt install foldops-agent=0.1.0-1 foldops-supervisor=0.1.0-1
 
 **`.deb` + apt** is the recommended path for **ongoing FoldOps updates** without OS redeploy. folding-os can:
 
-- Seed the image with an apt repo + pinned versions at build time, or
-- Replace Buildroot compile packages with “download `.deb` from GitHub Release” packages.
+- Seed the image with the apt source + pinned versions at build time, or
+- Replace Buildroot compile packages with “install from `deb.folding-os.com`” in image recipes.
 
 Both layouts install the same files under `/usr/bin`, `/usr/share/foldops/web`, etc.
 
 ---
 
-## Upgrade flow (Milestone 4 alignment)
+## Upgrade flow
 
-1. Tag foldops `v0.2.0` → CI publishes new `.deb` files.
-2. Publish to apt mirror (or `foldingosctl`/OS updater pulls debs).
+1. Tag foldops `v0.2.0` → build debs, signed repo, `npm run sync:apt-repo:r2`.
+2. Purge Cloudflare cache for `/dists/`.
 3. On each node: `apt update && apt upgrade foldops-agent` (and supervisor/web on fah-01).
 4. `postinst` runs `daemon-reload`; `prerm` stops services before file replace.
-5. `systemctl restart foldops-agent` (or let admin automate via apt hook).
 
 No full OS image flash required for FoldOps-only changes.

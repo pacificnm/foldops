@@ -31,7 +31,9 @@
     "vendor:rust": "./scripts/vendor-rust-deps.sh",
     "build:folding-os": "./scripts/build-folding-os-artifacts.sh",
     "build:debs": "./scripts/build-debs.sh",
-    "build:apt-repo": "./scripts/build-apt-repo.sh"
+    "build:apt-repo": "./scripts/build-apt-repo.sh",
+    "build:apt-repo:signed": "./scripts/build-apt-repo-signed.sh",
+    "sync:apt-repo:r2": "R2_BUCKET=${R2_BUCKET:-foldops-apt} ./scripts/upload-apt-repo-r2.sh"
   },
   "engines": {
     "node": ">=22.0.0"

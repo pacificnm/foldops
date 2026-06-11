@@ -294,7 +294,7 @@ Omit `hostnames` to update all known machines.
 
 **Requirements:** Each target must be online, reachable on `AGENT_HTTP_PORT`, and have `UPDATE_ENABLED=true` with a git checkout at `FOLDOPS_ROOT` (default `/opt/foldops`).
 
-**Folding-OS appliances:** nodes built from [Folding-OS images](folding-os.md) have no git/npm checkout. This endpoint is for legacy Debian dev farms only; appliance updates use the OS update system (Folding-OS Milestone 4).
+**Folding-OS / apt farms:** nodes installed from [deb.folding-os.com](installation.md#production-deployment-apt) have no git/npm checkout. Update with `apt install --only-upgrade foldops-agent` on each node. This deploy endpoint is for **legacy git-checkout farms** only.
 
 ---
 

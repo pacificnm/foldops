@@ -32,7 +32,29 @@ npm run check       # typecheck + lint
 
 Per package: `npm run typecheck -w @foldops/agent`, `npm run lint -w @foldops/web`, etc.
 
-## Production build
+## Production (apt)
+
+Install prebuilt Rust packages on farm nodes from **https://deb.folding-os.com**:
+
+```bash
+curl -fsSL https://deb.folding-os.com/foldops-archive-keyring.gpg \
+  | sudo gpg --dearmor -o /usr/share/keyrings/foldops.gpg
+
+echo 'deb [signed-by=/usr/share/keyrings/foldops.gpg] https://deb.folding-os.com stable main' \
+  | sudo tee /etc/apt/sources.list.d/foldops.list
+
+sudo apt update
+sudo apt install foldops-agent              # every FAH node
+sudo apt install foldops-supervisor         # supervisor node (fah-01)
+```
+
+Configure `/etc/foldops/agent.env` and `/etc/foldops/supervisor.env`, then `systemctl enable --now`. Full steps: [docs/installation.md](docs/installation.md#production-deployment-apt).
+
+Upgrade: `sudo apt install --only-upgrade foldops-agent foldops-supervisor foldops-web`
+
+## Production build (from source)
+
+For development or legacy git-checkout farms:
 
 ```bash
 npm install
@@ -40,7 +62,7 @@ npm run build:supervisor   # fah-01 — API + dashboard
 npm run build:agent        # fah-01..fah-04 — metrics collector
 ```
 
-See [apps/agent/README.md](apps/agent/README.md) for agent-specific build and deployment steps.
+See [apps/agent/README.md](apps/agent/README.md) for legacy Node agent build steps.
 
 ## Rust (in progress)
 
@@ -52,7 +74,9 @@ cargo build --release --workspace
 cargo test --workspace
 npm run build:web                    # dashboard for Rust supervisor
 npm run build:folding-os             # release tarballs for Folding-OS images
-npm run build:debs                   # .deb packages for apt upgrade on nodes
+npm run build:debs                   # .deb packages
+npm run build:apt-repo:signed        # signed apt repo for deb.folding-os.com
+npm run sync:apt-repo:r2             # upload to Cloudflare R2
 ```
 
 See [docs/rust-migration.md](docs/rust-migration.md), [docs/folding-os.md](docs/folding-os.md), [packaging/folding-os/README.md](packaging/folding-os/README.md), and [packaging/deb/README.md](packaging/deb/README.md).

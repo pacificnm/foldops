@@ -122,18 +122,76 @@ Image profiles:
 
 ---
 
+## Install and configure (apt)
+
+Folding-OS farm nodes install FoldOps from the official signed repository:
+
+**https://deb.folding-os.com**
+
+### Enable apt on each node
+
+```bash
+curl -fsSL https://deb.folding-os.com/foldops-archive-keyring.gpg \
+  | gpg --dearmor -o /usr/share/keyrings/foldops.gpg
+
+tee /etc/apt/sources.list.d/foldops.list <<'EOF'
+deb [signed-by=/usr/share/keyrings/foldops.gpg] https://deb.folding-os.com stable main
+EOF
+
+apt update
+```
+
+Image builds can bake the keyring and `sources.list` so first boot only needs `apt install`.
+
+### Install by profile
+
+| Profile | Packages |
+|---------|----------|
+| FAH worker | `foldops-agent` |
+| Supervisor (`fah-01`) | `foldops-agent` + `foldops-supervisor` |
+
+```bash
+apt install foldops-agent
+# supervisor node only:
+apt install foldops-supervisor
+```
+
+### Configure environment files
+
+Copy package templates and set secrets (see [Configuration](configuration.md)):
+
+```bash
+cp /etc/foldops/agent.env.example /etc/foldops/agent.env
+# SUPERVISOR_URL, AGENT_TOKEN (= supervisor INGEST_TOKEN)
+chmod 600 /etc/foldops/agent.env
+systemctl enable --now foldops-agent
+```
+
+Supervisor node:
+
+```bash
+cp /etc/foldops/supervisor.env.example /etc/foldops/supervisor.env
+# INGEST_TOKEN, WEB_ROOT=/usr/share/foldops/web
+chmod 600 /etc/foldops/supervisor.env
+systemctl enable --now foldops-supervisor
+```
+
+Step-by-step farm setup: [Installation — apt](installation.md#production-deployment-apt).
+
+---
+
 ## Updates on Folding-OS nodes
 
 Nodes built from Folding-OS images **do not** use `scripts/update-agent.sh` (no git/npm on appliance).
 
-**Recommended:** ship FoldOps as Debian packages (`foldops-agent`, `foldops-supervisor`, `foldops-web`) via a local apt repository baked into the image. Upgrade FoldOps without reflashing the OS:
+**Recommended:** `apt upgrade` from `deb.folding-os.com`:
 
 ```bash
-sudo apt update
-sudo apt install --only-upgrade foldops-agent foldops-supervisor foldops-web
+apt update
+apt install --only-upgrade foldops-agent foldops-supervisor foldops-web
 ```
 
-Build packages: `npm run build:debs` → `target/debian/*.deb`. See [`packaging/deb/README.md`](../packaging/deb/README.md).
+Maintainers publish with `npm run build:debs`, `npm run build:apt-repo:signed`, and `npm run sync:apt-repo:r2`. See [`packaging/deb/README.md`](../packaging/deb/README.md).
 
 The supervisor **Deploy** UI (`POST /api/deploy/agents`) remains for legacy Debian/git-checkout farms only.
 

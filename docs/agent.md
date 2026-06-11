@@ -1,10 +1,12 @@
 # Agent
 
-The FoldOps agent (`apps/agent`) runs on each FAH worker node and reports a full system + FAH snapshot every 60 seconds.
+The FoldOps agent runs on each FAH worker node and reports a full system + FAH snapshot every 60 seconds.
 
-Package README: [apps/agent/README.md](../apps/agent/README.md)
+**Production (farm nodes):** install the Rust agent from apt — `apt install foldops-agent`, configure `/etc/foldops/agent.env`, enable `foldops-agent.service`. See [Installation — apt](installation.md#production-deployment-apt).
 
-## Build
+**Development / legacy:** the Node agent in `apps/agent/` is still used for local dev and git-checkout farms. Package README: [apps/agent/README.md](../apps/agent/README.md).
+
+## Build (legacy Node agent)
 
 From the repository root:
 
@@ -33,7 +35,7 @@ cp apps/agent/.env.example apps/agent/.env
 npm run dev -w @foldops/agent
 ```
 
-Deploy to FAH nodes with the systemd unit in `apps/agent/systemd/foldops-agent.service`. See [Installation — Agent on fah-01..fah-04](installation.md#3-agent-on-fah-01-through-fah-04).
+Deploy to FAH nodes with apt ([Installation — apt](installation.md#production-deployment-apt)) or, for legacy git farms, the systemd unit in `apps/agent/systemd/foldops-agent.service` ([Installation — legacy agent](installation.md#3-agent-on-fah-01-through-fah-04)).
 
 ## What it collects
 

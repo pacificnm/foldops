@@ -75,7 +75,7 @@ Backlog of possible features to revisit. Not committed work — pick items when 
 - FAH project info proxy
 - Alerts v1 (webhook + banner)
 - Log viewer (ingest cache + live pull on agent HTTP :9100)
-- Deploy agents from supervisor (`git pull`, build, restart)
+- Deploy agents from supervisor (`git pull`, build, restart) — legacy git farms; apt farms use `deb.folding-os.com`
 - Remote control tab (agent, FAH systemd, pause/resume/finish, optional reboot)
 
 See [configuration.md](configuration.md), [installation.md](installation.md), and [api.md](api.md) for current behavior.

@@ -2,6 +2,8 @@
 
 FoldOps uses environment variables loaded via `dotenv` in development and systemd `EnvironmentFile` in production.
 
+**Apt installs** ship templates at `/etc/foldops/agent.env.example` and `/etc/foldops/supervisor.env.example`. Copy to `/etc/foldops/agent.env` and `/etc/foldops/supervisor.env` before enabling services. See [Installation — apt](installation.md#production-deployment-apt).
+
 ## Secrets
 
 Generate a long random token and use it for both:
@@ -113,7 +115,10 @@ The supervisor must resolve each agent **hostname** (e.g. `fah-02`) to a LAN IP 
 | `/etc/foldops/supervisor.env` | Supervisor configuration |
 | `/etc/foldops/agent.env` | Agent configuration |
 | `/var/lib/foldops/foldops.db` | Production SQLite database |
-| `/opt/foldops` | Deployed application root |
+| `/usr/share/foldops/web` | Dashboard static files (`WEB_ROOT` for Rust supervisor) |
+| `/usr/bin/foldops-agent` | Rust agent binary (apt / Folding-OS) |
+| `/usr/bin/foldops-supervisor` | Rust supervisor binary (apt / Folding-OS) |
+| `/opt/foldops` | Legacy git-checkout deployment root only |
 
 Set permissions on env files:
 

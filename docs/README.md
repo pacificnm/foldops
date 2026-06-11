@@ -7,7 +7,7 @@ FoldOps is a Folding@home farm monitor for Debian nodes. Agents on each FAH mach
 | Document | Description |
 |----------|-------------|
 | [Architecture](architecture.md) | System design, components, and data flow |
-| [Installation](installation.md) | Development setup and production deployment |
+| [Installation](installation.md) | Development setup, **apt install** (`deb.folding-os.com`), and legacy git deployment |
 | [Configuration](configuration.md) | Environment variables and secrets |
 | [API Reference](api.md) | HTTP endpoints and response formats |
 | [Agent](agent.md) | Metrics, build, and FAH log/DB parsing |
@@ -17,7 +17,7 @@ FoldOps is a Folding@home farm monitor for Debian nodes. Agents on each FAH mach
 | [Rust migration](rust-migration.md) | Plan to rewrite agent/supervisor in Rust for Folding-OS images |
 | [Folding-OS integration](folding-os.md) | Binary paths, systemd, and Buildroot packaging |
 | [packaging/folding-os/README.md](../packaging/folding-os/README.md) | Reference Buildroot packages for folding-os maintainers |
-| [packaging/deb/README.md](../packaging/deb/README.md) | Debian packages for apt install/upgrade without OS redeploy |
+| [packaging/deb/README.md](../packaging/deb/README.md) | Official apt repo (`deb.folding-os.com`), signing, and publish workflow |
 | [Alerts & Discord](alerts.md) | Webhook setup, rules, and troubleshooting |
 
 ## Quick links
@@ -38,8 +38,11 @@ The dashboard shows both temperatures on each machine card. See [Agent — Tempe
 
 ## Requirements
 
+**Farm nodes (production):** Debian with `fah-client`, outbound HTTPS to `deb.folding-os.com`, and FoldOps packages from apt — see [Installation — apt](installation.md#production-deployment-apt). No Node.js or git checkout on the node.
+
+**Development / legacy git farms:**
+
 - Node.js 22+
-- Debian with `fah-client` systemd unit
 - Build tools for `better-sqlite3` on the supervisor host (`build-essential`, `python3`)
 - **Optional:** `lm-sensors` on agent hosts if chassis temperature is not exposed via hwmon alone (see [Installation](installation.md#temperature-sensors-optional))
 - **Rust migration:** `rustup` + native dev packages on build hosts only — run `./scripts/check-rust-prereqs.sh` or see [Installation — Rust development prerequisites](installation.md#rust-development-prerequisites)

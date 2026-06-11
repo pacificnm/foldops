@@ -1,0 +1,13 @@
+# reprepro conf/distributions — generated automatically by build-apt-repo-signed.sh
+# when APT_SIGNING_KEY is set. This file is reference only.
+#
+# gpg --list-secret-keys --keyid-format long
+
+Origin: FoldOps
+Label: FoldOps
+Suite: stable
+Codename: stable
+Architectures: amd64 all
+Components: main
+Description: FoldOps farm monitor packages
+SignWith: REPLACE_WITH_YOUR_KEY_ID

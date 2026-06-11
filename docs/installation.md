@@ -181,6 +181,10 @@ cargo fmt --check
 
 ## Production build
 
+For **farm nodes**, prefer [apt deployment](#production-deployment-apt) — no build step on the node.
+
+The commands below build from source (Node legacy stack or local Rust binaries). Use on development machines or legacy git-checkout farms.
+
 From the repository root:
 
 ```bash
@@ -225,7 +229,154 @@ npm run build
 
 ---
 
-## Production deployment
+## Production deployment (apt)
+
+**Recommended** for Folding-OS farm nodes and any Debian host. Installs prebuilt **Rust** binaries from the official apt repository — no git checkout, `npm`, or `rustc` on the node.
+
+| Package | Host | Description |
+|---------|------|-------------|
+| `foldops-agent` | Every FAH node (`fah-01`..`fah-04`) | Metrics collector + local HTTP API |
+| `foldops-supervisor` | Supervisor node (`fah-01`) | Ingest API, SQLite, alerts, dashboard |
+| `foldops-web` | Pulled in by `foldops-supervisor` | React dashboard at `/usr/share/foldops/web/` |
+
+Repository: **https://deb.folding-os.com** (signed, hosted on Cloudflare R2). Maintainer docs: [`packaging/deb/README.md`](../packaging/deb/README.md).
+
+On **fah-01..fah-04** you are **root** — run these commands without `sudo`.
+
+### 1. Enable the apt repository
+
+On **each** node:
+
+```bash
+curl -fsSL https://deb.folding-os.com/foldops-archive-keyring.gpg \
+  | gpg --dearmor -o /usr/share/keyrings/foldops.gpg
+
+tee /etc/apt/sources.list.d/foldops.list <<'EOF'
+deb [signed-by=/usr/share/keyrings/foldops.gpg] https://deb.folding-os.com stable main
+EOF
+
+apt update
+```
+
+If `apt update` reports **“File has unexpected size”** or **“Mirror sync in progress?”**, Cloudflare may be serving stale `Packages.gz` metadata. Purge cache for `https://deb.folding-os.com/dists/` in the Cloudflare dashboard, then run `apt update` again.
+
+### 2. Install packages
+
+**Every FAH node** (including `fah-01`):
+
+```bash
+apt install foldops-agent
+```
+
+**Supervisor node only** (`fah-01`):
+
+```bash
+apt install foldops-supervisor
+# installs foldops-web as a dependency
+```
+
+Services are **not** auto-started on install. Configure environment files first (next steps).
+
+### 3. Configure the supervisor (`fah-01`)
+
+Generate a shared secret (use the same value for `INGEST_TOKEN` and every `AGENT_TOKEN`):
+
+```bash
+openssl rand -hex 32
+```
+
+Create the supervisor environment file from the package template:
+
+```bash
+cp /etc/foldops/supervisor.env.example /etc/foldops/supervisor.env
+```
+
+Edit `/etc/foldops/supervisor.env` — at minimum set `INGEST_TOKEN` and confirm paths:
+
+```env
+HOST=0.0.0.0
+PORT=3000
+INGEST_TOKEN=<your-secret>
+DB_PATH=/var/lib/foldops/foldops.db
+WEB_ROOT=/usr/share/foldops/web
+```
+
+Optional: alerts, live logs, remote control — see [Configuration](configuration.md).
+
+```bash
+chmod 600 /etc/foldops/supervisor.env
+systemctl enable --now foldops-supervisor
+systemctl status foldops-supervisor
+curl -s http://localhost:3000/api/machines
+```
+
+Dashboard: **http://fah-01:3000**
+
+### 4. Configure the agent (all nodes)
+
+On **each** FAH node:
+
+```bash
+cp /etc/foldops/agent.env.example /etc/foldops/agent.env
+```
+
+Edit `/etc/foldops/agent.env`:
+
+```env
+SUPERVISOR_URL=http://fah-01:3000
+AGENT_TOKEN=<same value as INGEST_TOKEN on supervisor>
+INTERVAL_MS=60000
+FAH_LOG_PATH=/var/log/fah-client/log.txt
+FAH_DB_PATH=/var/lib/fah-client/client.db
+AGENT_HTTP_PORT=9100
+```
+
+Use the supervisor’s LAN IP in `SUPERVISOR_URL` if hostnames are not resolved yet.
+
+```bash
+chmod 600 /etc/foldops/agent.env
+systemctl enable --now foldops-agent
+journalctl -u foldops-agent -f
+```
+
+After ~60 seconds the machine should appear on the dashboard. See [Network connectivity](#network-connectivity) if ingest fails.
+
+### 5. Upgrade FoldOps
+
+When a new release is published to the apt repo:
+
+```bash
+apt update
+apt install --only-upgrade foldops-agent foldops-supervisor foldops-web
+```
+
+Or upgrade individual packages. `postinst` runs `daemon-reload`; restart services if needed:
+
+```bash
+systemctl restart foldops-agent
+# on fah-01:
+systemctl restart foldops-supervisor
+```
+
+No OS reflash required for FoldOps-only changes.
+
+### 6. Publish updates (maintainers)
+
+From the foldops repository on a build machine with the signing key and `rclone` configured:
+
+```bash
+npm run build:debs
+npm run build:apt-repo:signed
+npm run sync:apt-repo:r2
+```
+
+After upload, purge Cloudflare cache for `/dists/` on `deb.folding-os.com` so nodes do not see mismatched `Release` / `Packages.gz` hashes. See [`packaging/deb/README.md`](../packaging/deb/README.md).
+
+---
+
+## Production deployment (legacy: git checkout)
+
+For Debian hosts that deploy from a **git clone** at `/opt/foldops` with Node.js build tooling. Not used on Folding-OS appliance images.
 
 On **fah-01..fah-04** you are **root** — run these commands without `sudo`.
 
@@ -419,6 +570,7 @@ systemctl restart foldops-agent
 
 | Symptom | Check |
 |---------|-------|
+| `apt update`: unexpected size / mirror sync | Stale CDN cache on `deb.folding-os.com` — purge `/dists/` in Cloudflare; retry `apt update` |
 | Agent logs `ingest error` | `AGENT_TOKEN` matches `INGEST_TOKEN`; supervisor reachable at `SUPERVISOR_URL` |
 | Machine shows offline | Agent service running; firewall allows port 3000 to fah-01 |
 | No FAH metrics | `fah-client` running; agent can read `FAH_DB_PATH` and `FAH_LOG_PATH` |

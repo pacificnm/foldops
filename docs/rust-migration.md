@@ -171,9 +171,9 @@ Mirror [`apps/supervisor/src/`](../apps/supervisor/src/) (~15 modules):
 
 ## Phase 4 — Folding-OS packaging (coordinated in `pacificnm/folding-os`)
 
-**FoldOps repo (done):** reference Buildroot packages, env templates, vendor/release scripts, and CI release assets under [`packaging/folding-os/`](../packaging/folding-os/).
+**FoldOps repo (done):** reference Buildroot packages, env templates, vendor/release scripts, CI release assets under [`packaging/folding-os/`](../packaging/folding-os/), and signed apt repo at **https://deb.folding-os.com** ([`packaging/deb/`](../packaging/deb/README.md)).
 
-**Folding-OS repo (pending):** copy packages into the image build and enable per profile.
+**Folding-OS repo (pending):** copy packages into the image build, bake apt source + keyring, and enable per profile. Ongoing FoldOps updates: `apt upgrade` from `deb.folding-os.com` — no OS reflash.
 
 FoldOps provides **source + version tags**; Folding-OS adds Buildroot packages (Milestone 3):
 
@@ -203,7 +203,8 @@ Pattern matches existing `foldingosctl` package (pinned git ref, vendored/offlin
 |-------------|-----------|
 | **Folding-OS image** | Rust binaries only |
 | **Dev / git checkout on Debian** | Either Node (`npm run dev:*`) or Rust (`cargo run`) — both supported during transition |
-| **Legacy production (current)** | Node until image rollout |
+| **Farm nodes (apt)** | Rust binaries from `deb.folding-os.com` |
+| **Legacy git-checkout farms** | Node until cutover |
 
 - Add Rust systemd units: [`apps/agent/systemd/foldops-agent.service`](../apps/agent/systemd/foldops-agent.service) → `ExecStart=/usr/bin/foldops-agent`
 - Keep Node units documented as legacy (`foldops-agent-node.service` or README note).
@@ -240,7 +241,8 @@ flowchart TD
 - [x] Add `scripts/vendor-rust-deps.sh` and `scripts/build-folding-os-artifacts.sh`
 - [x] CI release workflow uploads binaries + Folding-OS tarballs on `v*` tags
 - [x] Debian packages (`foldops-agent`, `foldops-supervisor`, `foldops-web`) for apt upgrade without OS redeploy
-- [ ] folding-os repo: apt repo + image profiles (worker vs supervisor node)
+- [x] Official apt repo at `deb.folding-os.com` (signed, R2 + Cloudflare CDN)
+- [ ] folding-os repo: bake apt source + image profiles (worker vs supervisor node)
 - [ ] Parity validation vs Node; deprecate Node in docs; keep legacy apps in `apps/` for dev
 
 ---
@@ -257,7 +259,7 @@ flowchart TD
 
 ## Docs to update (foldops repo)
 
-- [`docs/installation.md`](installation.md) — split “Debian git checkout” vs “Folding-OS image”
+- [`docs/installation.md`](installation.md) — apt (`deb.folding-os.com`) vs legacy git checkout
 - [`docs/configuration.md`](configuration.md) — unchanged env vars
 - New [`docs/folding-os.md`](folding-os.md) — binary paths, Buildroot integration contract
 - [`docs/roadmap.md`](roadmap.md) — Rust migration item

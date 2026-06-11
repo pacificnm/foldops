@@ -22,3 +22,8 @@ apps/supervisor/data/*
 /packaging/staging/
 /packaging/deb/staging/
 /packaging/apt-repo/
+/packaging/deb/signing-key.env
+# Never commit private signing material
+*.sec
+*private*.gpg
+*private*.key
