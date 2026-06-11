@@ -7,6 +7,8 @@
 - Node.js 22+ (see `.nvmrc`)
 - npm 10+
 
+For Rust agent/supervisor work (see [Rust migration](rust-migration.md)), also install the [Rust development prerequisites](#rust-development-prerequisites) below.
+
 ### Setup
 
 ```bash
@@ -73,6 +75,72 @@ npm run start -w @foldops/agent
 ```
 
 See also [apps/agent/README.md](../apps/agent/README.md).
+
+### Rust development prerequisites
+
+Required on a **development machine** only. Folding-OS farm images build FoldOps inside Buildroot during image creation — nodes do not need `rustc` or `cargo` at runtime.
+
+#### Rust toolchain
+
+Install via [rustup](https://rustup.rs/):
+
+```bash
+curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
+source "$HOME/.cargo/env"
+rustup default stable
+rustup component add clippy rustfmt   # optional
+```
+
+Verify:
+
+```bash
+rustc --version
+cargo --version
+```
+
+Default target on x86_64 Linux is `x86_64-unknown-linux-gnu` (matches Folding-OS v0.1.0). ARM64 cross-compilation is only needed later for Raspberry Pi images.
+
+#### System packages (Debian/Ubuntu)
+
+Native libraries used at **compile time** by planned Rust crates (`rusqlite`, `reqwest`, etc.):
+
+```bash
+sudo apt install build-essential pkg-config libssl-dev libsqlite3-dev
+```
+
+| Package | Purpose |
+|---------|---------|
+| `build-essential` | C compiler and linker (`cc`, `gcc`) |
+| `pkg-config` | Locate native libraries during `cargo build` |
+| `libssl-dev` | TLS for outbound HTTP (`reqwest` — webhooks, FAH API) |
+| `libsqlite3-dev` | SQLite for the Rust supervisor (`rusqlite`) |
+
+Optional:
+
+| Package | Purpose |
+|---------|---------|
+| `lm-sensors` | Agent temperature fallback via `sensors -j` (hwmon alone is often enough) |
+| `sqlite3` | CLI for inspecting FAH `client.db` during development |
+
+#### Build commands (once the Cargo workspace exists)
+
+The Rust crates are not in the repo yet — see [Rust migration — Phase 1](rust-migration.md#phase-1--scaffold--types--ci). When landed:
+
+```bash
+cargo build --release -p foldops-agent
+cargo build --release -p foldops-supervisor
+npm run build -w @foldops/web    # React dashboard (still Node/Vite)
+```
+
+You still need Node.js for the React frontend even when running the Rust supervisor. During the transition, either the Node or Rust backend can serve `/api`; the dashboard is unchanged.
+
+#### Lint and test
+
+```bash
+cargo test
+cargo clippy --workspace -- -D warnings
+cargo fmt --check
+```
 
 ---
 

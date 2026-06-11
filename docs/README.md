@@ -14,6 +14,7 @@ FoldOps is a Folding@home farm monitor for Debian nodes. Agents on each FAH mach
 | [apps/agent/README.md](../apps/agent/README.md) | Agent build, dev, and systemd quick reference |
 | [Database](database.md) | SQLite schema and retention |
 | [Roadmap](roadmap.md) | Future feature ideas backlog |
+| [Rust migration](rust-migration.md) | Plan to rewrite agent/supervisor in Rust for Folding-OS images |
 | [Alerts & Discord](alerts.md) | Webhook setup, rules, and troubleshooting |
 
 ## Quick links
@@ -38,6 +39,7 @@ The dashboard shows both temperatures on each machine card. See [Agent — Tempe
 - Debian with `fah-client` systemd unit
 - Build tools for `better-sqlite3` on the supervisor host (`build-essential`, `python3`)
 - **Optional:** `lm-sensors` on agent hosts if chassis temperature is not exposed via hwmon alone (see [Installation](installation.md#temperature-sensors-optional))
+- **Rust migration:** `rustup` + native dev packages on build hosts only — see [Installation — Rust development prerequisites](installation.md#rust-development-prerequisites)
 
 ## Project layout
 
