@@ -122,14 +122,49 @@ Optional:
 | `lm-sensors` | Agent temperature fallback via `sensors -j` (hwmon alone is often enough) |
 | `sqlite3` | CLI for inspecting FAH `client.db` during development |
 
-#### Build commands (once the Cargo workspace exists)
+#### Readiness checklist
 
-The Rust crates are not in the repo yet — see [Rust migration — Phase 1](rust-migration.md#phase-1--scaffold--types--ci). When landed:
+Run from the repo root:
+
+```bash
+./scripts/check-rust-prereqs.sh
+```
+
+Exit code `0` means all **required** tools are present. The script prints OK/FAIL for each item.
+
+| Check | Command / probe | Required | apt package (Debian) |
+|-------|-----------------|----------|----------------------|
+| Rust compiler | `rustc --version` | Yes | via [rustup](https://rustup.rs/) |
+| Cargo | `cargo --version` | Yes | via rustup |
+| Toolchain manager | `rustup show` | Yes | rustup |
+| C compiler | `cc --version` | Yes | `build-essential` |
+| GNU compiler | `gcc --version` | Yes | `build-essential` |
+| pkg-config | `pkg-config --version` | Yes | `pkg-config` |
+| OpenSSL headers | `pkg-config --exists openssl` | Yes | `libssl-dev` |
+| SQLite headers | `pkg-config --exists sqlite3` | Yes | `libsqlite3-dev` |
+| Node.js 22+ | `node --version` | Yes† | NodeSource / nvm (see `.nvmrc`) |
+| npm | `npm --version` | Yes† | bundled with Node |
+| lm-sensors | `sensors` | No | `lm-sensors` |
+| sqlite3 CLI | `sqlite3 --version` | No | `sqlite3` |
+| clippy | `cargo clippy --version` | No | `rustup component add clippy` |
+| Cargo workspace | `cargo metadata` | Yes | [Rust workspace](../Cargo.toml) |
+
+†Required for the React dashboard; not needed if you only build/test the Rust agent binary.
+
+One-line install for missing **apt** packages:
+
+```bash
+sudo apt install build-essential pkg-config libssl-dev libsqlite3-dev
+```
+
+#### Build commands
 
 ```bash
 cargo build --release -p foldops-agent
 cargo build --release -p foldops-supervisor
 npm run build -w @foldops/web    # React dashboard (still Node/Vite)
+# or from repo root:
+npm run build:rust
 ```
 
 You still need Node.js for the React frontend even when running the Rust supervisor. During the transition, either the Node or Rust backend can serve `/api`; the dashboard is unchanged.

@@ -42,6 +42,20 @@ npm run build:agent        # fah-01..fah-04 — metrics collector
 
 See [apps/agent/README.md](apps/agent/README.md) for agent-specific build and deployment steps.
 
+## Rust (in progress)
+
+Agent and supervisor are being rewritten in Rust for [Folding-OS](https://github.com/pacificnm/folding-os) images. Legacy Node apps remain for development.
+
+```bash
+./scripts/check-rust-prereqs.sh
+cargo build --release --workspace
+cargo test --workspace
+npm run build:web                    # dashboard for Rust supervisor
+npm run build:folding-os             # release tarballs for Folding-OS images
+```
+
+See [docs/rust-migration.md](docs/rust-migration.md), [docs/folding-os.md](docs/folding-os.md), and [packaging/folding-os/README.md](packaging/folding-os/README.md).
+
 ## Documentation
 
 Full documentation lives in **[docs/](docs/)**:

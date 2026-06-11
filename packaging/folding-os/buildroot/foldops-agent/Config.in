@@ -1,0 +1,8 @@
+config BR2_PACKAGE_FOLDOPS_AGENT
+	bool "foldops-agent"
+	depends on BR2_PACKAGE_HOST_RUSTC_TARGET_ARCH_SUPPORTS
+	help
+	  FoldOps metrics collector for Folding@home farm nodes.
+	  Posts ingest payloads to the supervisor and exposes a local HTTP API.
+
+	  https://github.com/pacificnm/foldops

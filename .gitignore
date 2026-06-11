@@ -12,3 +12,11 @@ apps/supervisor/web/dist/
 # Supervisor local SQLite data
 apps/supervisor/data/*
 !apps/supervisor/data/.gitkeep
+
+# Rust
+/target/
+/vendor/
+/.cargo/
+
+# Folding-OS release staging
+/packaging/staging/

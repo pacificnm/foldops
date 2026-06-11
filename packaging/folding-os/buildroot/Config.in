@@ -1,0 +1,14 @@
+menu "FoldOps"
+
+config BR2_FOLDOPS_CARGO_OFFLINE
+	bool "Use vendored Cargo dependencies (offline build)"
+	default y
+	depends on BR2_PACKAGE_HOST_RUSTC_TARGET_ARCH_SUPPORTS
+	help
+	  Require vendor/ in the foldops source tree (see scripts/vendor-rust-deps.sh).
+	  Disable only if the Buildroot host has network during cargo build.
+
+source "$BR2_EXTERNAL_FOLDING_OS_PATH/build/packages/foldops-agent/Config.in"
+source "$BR2_EXTERNAL_FOLDING_OS_PATH/build/packages/foldops-supervisor/Config.in"
+
+endmenu

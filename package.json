@@ -13,6 +13,7 @@
     "build": "npm run build --workspaces --if-present",
     "build:shared": "npm run build -w @foldops/shared",
     "build:agent": "npm run build -w @foldops/shared && npm run build -w @foldops/agent",
+    "build:web": "npm run build -w @foldops/web",
     "build:supervisor": "npm run build -w @foldops/shared && npm run build -w @foldops/supervisor && npm run build -w @foldops/web",
     "typecheck": "npm run build -w @foldops/shared && npm run typecheck -w @foldops/shared && npm run typecheck -w @foldops/agent && npm run typecheck -w @foldops/supervisor && npm run typecheck -w @foldops/web",
     "lint": "eslint .",
@@ -20,7 +21,15 @@
     "dev:supervisor": "npm run dev -w @foldops/supervisor",
     "dev:agent": "npm run dev -w @foldops/agent",
     "start:supervisor": "npm run start -w @foldops/supervisor",
-    "start:agent": "npm run start -w @foldops/agent"
+    "start:agent": "npm run start -w @foldops/agent",
+    "build:rust": "cargo build --release --workspace",
+    "build:rust:agent": "cargo build --release -p foldops-agent",
+    "build:rust:supervisor": "cargo build --release -p foldops-supervisor",
+    "test:rust": "cargo test --workspace",
+    "check:rust": "cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace",
+    "check:rust-prereqs": "./scripts/check-rust-prereqs.sh",
+    "vendor:rust": "./scripts/vendor-rust-deps.sh",
+    "build:folding-os": "./scripts/build-folding-os-artifacts.sh"
   },
   "engines": {
     "node": ">=22.0.0"

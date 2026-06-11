@@ -15,6 +15,8 @@ FoldOps is a Folding@home farm monitor for Debian nodes. Agents on each FAH mach
 | [Database](database.md) | SQLite schema and retention |
 | [Roadmap](roadmap.md) | Future feature ideas backlog |
 | [Rust migration](rust-migration.md) | Plan to rewrite agent/supervisor in Rust for Folding-OS images |
+| [Folding-OS integration](folding-os.md) | Binary paths, systemd, and Buildroot packaging |
+| [packaging/folding-os/README.md](../packaging/folding-os/README.md) | Reference Buildroot packages for folding-os maintainers |
 | [Alerts & Discord](alerts.md) | Webhook setup, rules, and troubleshooting |
 
 ## Quick links
@@ -39,17 +41,23 @@ The dashboard shows both temperatures on each machine card. See [Agent — Tempe
 - Debian with `fah-client` systemd unit
 - Build tools for `better-sqlite3` on the supervisor host (`build-essential`, `python3`)
 - **Optional:** `lm-sensors` on agent hosts if chassis temperature is not exposed via hwmon alone (see [Installation](installation.md#temperature-sensors-optional))
-- **Rust migration:** `rustup` + native dev packages on build hosts only — see [Installation — Rust development prerequisites](installation.md#rust-development-prerequisites)
+- **Rust migration:** `rustup` + native dev packages on build hosts only — run `./scripts/check-rust-prereqs.sh` or see [Installation — Rust development prerequisites](installation.md#rust-development-prerequisites)
 
 ## Project layout
 
 ```
 foldops/
+├── Cargo.toml              # Rust workspace (agent + supervisor + types)
+├── crates/
+│   ├── foldops-types/      # Shared ingest/control types
+│   ├── foldops-agent/      # Rust agent (in progress)
+│   └── foldops-supervisor/ # Rust supervisor (in progress)
 ├── apps/
-│   ├── agent/              # Metrics collector (fah-01..fah-04)
-│   └── supervisor/         # API, SQLite, React dashboard (fah-01)
+│   ├── agent/              # Legacy Node metrics collector
+│   └── supervisor/         # Legacy Node API + React dashboard
 │       └── web/            # Vite + React frontend
 ├── packages/
-│   └── shared/             # Shared Zod schemas
+│   └── shared/             # Shared Zod schemas (Node)
+├── systemd/rust/           # Systemd units for Rust binaries
 └── docs/                   # This documentation
 ```

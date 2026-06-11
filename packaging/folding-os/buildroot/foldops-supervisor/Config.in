@@ -1,0 +1,12 @@
+config BR2_PACKAGE_FOLDOPS_SUPERVISOR
+	bool "foldops-supervisor"
+	depends on BR2_PACKAGE_HOST_RUSTC_TARGET_ARCH_SUPPORTS
+	help
+	  FoldOps supervisor API, SQLite store, alerts, and React dashboard.
+	  Typically enabled on one management node (e.g. fah-01).
+
+	  Requires prebuilt web assets (apps/supervisor/web/dist) in the
+	  foldops source tree — produced by CI on release tags or
+	  `npm run build:web` before image build.
+
+	  https://github.com/pacificnm/foldops

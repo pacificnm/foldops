@@ -1,0 +1,17 @@
+[Unit]
+Description=FoldOps FAH farm supervisor and dashboard (Rust)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=foldops
+Group=foldops
+WorkingDirectory=/var/lib/foldops
+EnvironmentFile=/etc/foldops/supervisor.env
+ExecStart=/usr/bin/foldops-supervisor
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

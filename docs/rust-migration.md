@@ -97,7 +97,13 @@ Target: **x86_64-unknown-linux-gnu** first (Folding-OS v0.1.0). ARM64 (Pi) later
 
 ### Development machine prerequisites
 
-See [Installation — Rust development prerequisites](installation.md#rust-development-prerequisites) for `rustup`, apt packages (`build-essential`, `libssl-dev`, `libsqlite3-dev`, etc.), and build commands. Farm nodes running Folding-OS images do not need a Rust toolchain.
+See [Installation — Rust development prerequisites](installation.md#rust-development-prerequisites) for `rustup`, apt packages, and build commands. Verify readiness:
+
+```bash
+./scripts/check-rust-prereqs.sh
+```
+
+Farm nodes running Folding-OS images do not need a Rust toolchain.
 
 ---
 
@@ -165,7 +171,11 @@ Mirror [`apps/supervisor/src/`](../apps/supervisor/src/) (~15 modules):
 
 ## Phase 4 — Folding-OS packaging (coordinated in `pacificnm/folding-os`)
 
-FoldOps repo provides **source + version tags**; Folding-OS adds Buildroot packages (Milestone 3):
+**FoldOps repo (done):** reference Buildroot packages, env templates, vendor/release scripts, and CI release assets under [`packaging/folding-os/`](../packaging/folding-os/).
+
+**Folding-OS repo (pending):** copy packages into the image build and enable per profile.
+
+FoldOps provides **source + version tags**; Folding-OS adds Buildroot packages (Milestone 3):
 
 ```text
 folding-os/build/packages/foldops-agent/
@@ -221,11 +231,15 @@ flowchart TD
 
 ## Implementation checklist
 
-- [ ] Add root Cargo workspace (`foldops-types`, `foldops-agent`, `foldops-supervisor`) and CI workflow
-- [ ] Port `IngestPayload` + control actions to `foldops-types` with contract test fixtures
-- [ ] Implement Rust agent: collector, FAH fusion, agent HTTP API, systemd unit for `/usr/bin/foldops-agent`
-- [ ] Implement Rust supervisor: SQLite, all `/api` routes, alerts, agent proxy, deploy, static web serve
-- [ ] Add `docs/folding-os.md` with Buildroot packaging contract for pacificnm/folding-os Milestone 3
+- [x] Add root Cargo workspace (`foldops-types`, `foldops-agent`, `foldops-supervisor`) and CI workflow
+- [x] Port `IngestPayload` + control actions to `foldops-types` with contract test fixtures
+- [x] Implement Rust agent: collector, FAH fusion, agent HTTP API, systemd unit for `/usr/bin/foldops-agent`
+- [x] Implement Rust supervisor: SQLite, all `/api` routes, alerts, agent proxy, deploy, static web serve
+- [x] Add `docs/folding-os.md` with Buildroot packaging contract for pacificnm/folding-os Milestone 3
+- [x] Add `packaging/folding-os/` reference Buildroot packages, env templates, sysusers/tmpfiles
+- [x] Add `scripts/vendor-rust-deps.sh` and `scripts/build-folding-os-artifacts.sh`
+- [x] CI release workflow uploads binaries + Folding-OS tarballs on `v*` tags
+- [ ] folding-os repo copies packages and ships image profiles (worker vs supervisor node)
 - [ ] Parity validation vs Node; deprecate Node in docs; keep legacy apps in `apps/` for dev
 
 ---
