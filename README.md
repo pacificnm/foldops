@@ -52,9 +52,10 @@ cargo build --release --workspace
 cargo test --workspace
 npm run build:web                    # dashboard for Rust supervisor
 npm run build:folding-os             # release tarballs for Folding-OS images
+npm run build:debs                   # .deb packages for apt upgrade on nodes
 ```
 
-See [docs/rust-migration.md](docs/rust-migration.md), [docs/folding-os.md](docs/folding-os.md), and [packaging/folding-os/README.md](packaging/folding-os/README.md).
+See [docs/rust-migration.md](docs/rust-migration.md), [docs/folding-os.md](docs/folding-os.md), [packaging/folding-os/README.md](packaging/folding-os/README.md), and [packaging/deb/README.md](packaging/deb/README.md).
 
 ## Documentation
 

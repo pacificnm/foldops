@@ -124,7 +124,16 @@ Image profiles:
 
 ## Updates on Folding-OS nodes
 
-Nodes built from Folding-OS images **do not** use `scripts/update-agent.sh` (no git/npm on appliance). Updates arrive via the Folding-OS update system (Milestone 4).
+Nodes built from Folding-OS images **do not** use `scripts/update-agent.sh` (no git/npm on appliance).
+
+**Recommended:** ship FoldOps as Debian packages (`foldops-agent`, `foldops-supervisor`, `foldops-web`) via a local apt repository baked into the image. Upgrade FoldOps without reflashing the OS:
+
+```bash
+sudo apt update
+sudo apt install --only-upgrade foldops-agent foldops-supervisor foldops-web
+```
+
+Build packages: `npm run build:debs` → `target/debian/*.deb`. See [`packaging/deb/README.md`](../packaging/deb/README.md).
 
 The supervisor **Deploy** UI (`POST /api/deploy/agents`) remains for legacy Debian/git-checkout farms only.
 

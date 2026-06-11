@@ -20,3 +20,5 @@ apps/supervisor/data/*
 
 # Folding-OS release staging
 /packaging/staging/
+/packaging/deb/staging/
+/packaging/apt-repo/

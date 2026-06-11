@@ -29,7 +29,9 @@
     "check:rust": "cargo fmt --check && cargo clippy --workspace --all-targets -- -D warnings && cargo test --workspace",
     "check:rust-prereqs": "./scripts/check-rust-prereqs.sh",
     "vendor:rust": "./scripts/vendor-rust-deps.sh",
-    "build:folding-os": "./scripts/build-folding-os-artifacts.sh"
+    "build:folding-os": "./scripts/build-folding-os-artifacts.sh",
+    "build:debs": "./scripts/build-debs.sh",
+    "build:apt-repo": "./scripts/build-apt-repo.sh"
   },
   "engines": {
     "node": ">=22.0.0"

@@ -239,7 +239,8 @@ flowchart TD
 - [x] Add `packaging/folding-os/` reference Buildroot packages, env templates, sysusers/tmpfiles
 - [x] Add `scripts/vendor-rust-deps.sh` and `scripts/build-folding-os-artifacts.sh`
 - [x] CI release workflow uploads binaries + Folding-OS tarballs on `v*` tags
-- [ ] folding-os repo copies packages and ships image profiles (worker vs supervisor node)
+- [x] Debian packages (`foldops-agent`, `foldops-supervisor`, `foldops-web`) for apt upgrade without OS redeploy
+- [ ] folding-os repo: apt repo + image profiles (worker vs supervisor node)
 - [ ] Parity validation vs Node; deprecate Node in docs; keep legacy apps in `apps/` for dev
 
 ---

@@ -65,6 +65,9 @@ jobs:
       - name: Build Folding-OS artifacts
         run: ./scripts/build-folding-os-artifacts.sh "${GITHUB_REF_NAME#v}"
 
+      - name: Build Debian packages
+        run: ./scripts/build-debs.sh "${GITHUB_REF_NAME#v}"
+
       - name: Upload CI artifacts
         uses: actions/upload-artifact@v4
         with:
@@ -72,6 +75,7 @@ jobs:
           path: |
             target/release/foldops-agent
             target/release/foldops-supervisor
+            target/debian/*.deb
             packaging/staging/
 
       - name: Create GitHub Release
@@ -80,5 +84,6 @@ jobs:
           files: |
             target/release/foldops-agent
             target/release/foldops-supervisor
+            target/debian/*.deb
             packaging/staging/*.tar.xz
           generate_release_notes: true

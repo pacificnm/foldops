@@ -1,0 +1,17 @@
+#!/bin/sh
+set -e
+
+#DEBHELPER#
+
+case "$1" in
+    configure)
+        if command -v deb-systemd-helper >/dev/null 2>&1; then
+            deb-systemd-helper daemon-reload || true
+        elif command -v systemctl >/dev/null 2>&1; then
+            systemctl daemon-reload || true
+        fi
+        ;;
+esac
+
+# Service is not auto-enabled — configure /etc/foldops/agent.env first.
+exit 0

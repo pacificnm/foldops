@@ -17,6 +17,7 @@ FoldOps is a Folding@home farm monitor for Debian nodes. Agents on each FAH mach
 | [Rust migration](rust-migration.md) | Plan to rewrite agent/supervisor in Rust for Folding-OS images |
 | [Folding-OS integration](folding-os.md) | Binary paths, systemd, and Buildroot packaging |
 | [packaging/folding-os/README.md](../packaging/folding-os/README.md) | Reference Buildroot packages for folding-os maintainers |
+| [packaging/deb/README.md](../packaging/deb/README.md) | Debian packages for apt install/upgrade without OS redeploy |
 | [Alerts & Discord](alerts.md) | Webhook setup, rules, and troubleshooting |
 
 ## Quick links

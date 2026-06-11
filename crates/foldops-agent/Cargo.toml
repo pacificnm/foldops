@@ -11,6 +11,28 @@ rust-version.workspace = true
 name = "foldops-agent"
 path = "src/main.rs"
 
+[package.metadata.deb]
+name = "foldops-agent"
+maintainer = "Pacific NM <foldops@pacificnm.com>"
+copyright = "2026, Pacific NM"
+license-file = ["../../LICENSE", "4"]
+section = "utils"
+priority = "optional"
+revision = "1"
+depends = "systemd, $auto"
+# Binary is auto-included by cargo-deb; extra files only (do not set a catch-all assets list).
+extended-description = """\
+FoldOps metrics collector for Folding@home farm nodes.\
+Posts ingest payloads to the supervisor and exposes a local HTTP API for logs and control."""
+conf-files = ["/etc/foldops/agent.env.example"]
+maintainer-scripts = "../../packaging/deb/foldops-agent/"
+systemd-units = [{ unit-name = "foldops-agent.service", enable = false }]
+assets = [
+    "$auto",
+    ["../../systemd/rust/foldops-agent.service", "lib/systemd/system/foldops-agent.service", "644"],
+    ["../../packaging/folding-os/env/agent.env.example", "etc/foldops/agent.env.example", "644"],
+]
+
 [dependencies]
 axum.workspace = true
 chrono.workspace = true

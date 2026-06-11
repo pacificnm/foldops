@@ -110,6 +110,10 @@ FoldOps failure must not block boot or FAH folding (see folding-os `doc/foldops-
 
 ## Updates
 
-Folding-OS appliances do **not** use `scripts/update-agent.sh`. OS-level updates (Milestone 4) replace image binaries.
+Folding-OS appliances do **not** use `scripts/update-agent.sh`.
+
+**Preferred for FoldOps-only updates:** Debian packages + apt (see [`packaging/deb/README.md`](../deb/README.md)). Publish `target/debian/*.deb` to an apt repo on the image; nodes run `apt upgrade` without an OS reflash.
+
+Buildroot compile-from-source (above) is still valid for **initial image** seeding; ongoing FoldOps releases should use `.deb` packages.
 
 The supervisor **Deploy** UI (`POST /api/deploy/agents`) remains for legacy Debian git-checkout farms only.
